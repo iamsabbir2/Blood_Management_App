@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -27,12 +28,40 @@
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" href="favicon.png" />
 
   <title>blood_management_app</title>
   <link rel="manifest" href="manifest.json">
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
+  <script>
+    //web app's firebase configuration
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "firebase/app";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCIVvpqw8lAMDmjVjviTVO4uCa62BGvsJo",
+      authDomain: "bloodmanagementapp-b2314.firebaseapp.com",
+      projectId: "bloodmanagementapp-b2314",
+      storageBucket: "bloodmanagementapp-b2314.appspot.com",
+      messagingSenderId: "454925533198",
+      appId: "1:454925533198:web:282d542b14390a7bacbc5f"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+  </script>
+
 </head>
+
 <body>
   <script src="flutter_bootstrap.js" async></script>
 </body>
+
 </html>

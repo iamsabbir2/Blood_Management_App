@@ -9,14 +9,12 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp();
   runApp(ProviderScope(child: const MyApp()));
 }
 
 final kColorScheme = ColorScheme.fromSeed(
-  seedColor: const Color.fromARGB(235, 255, 0, 0),
+  seedColor: const Color.fromARGB(255, 213, 0, 0),
 );
 
 class MyApp extends StatelessWidget {

@@ -73,7 +73,7 @@ class _BmaScreenState extends State<BmaScreen> {
                             Icon(
                               Icons.search,
                               size: 40.0,
-                              color: Colors.red,
+                              color: Theme.of(context).colorScheme.error,
                             ),
                             Text('Find Donor'),
                           ],
@@ -98,7 +98,7 @@ class _BmaScreenState extends State<BmaScreen> {
                             Icon(
                               Icons.bloodtype,
                               size: 40.0,
-                              color: Colors.red,
+                              color: Theme.of(context).colorScheme.error,
                             ),
                             Text('Blood Request'),
                           ],
@@ -107,25 +107,29 @@ class _BmaScreenState extends State<BmaScreen> {
                     ),
                     InkWell(
                       onTap: () {
-                        print('Find Donor');
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) {
-                              return DonorsList();
-                            },
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Feedback from'),
                           ),
                         );
+                        // Navigator.of(context).push(
+                        //   MaterialPageRoute(
+                        //     builder: (ctx) {
+                        //       return DonorsList();
+                        //     },
+                        //   ),
+                        // );
                       },
                       child: Card(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.search,
+                              Icons.mic_none,
                               size: 40.0,
-                              color: Colors.red,
+                              color: Theme.of(context).colorScheme.error,
                             ),
-                            Text('Find Donor'),
+                            Text('None'),
                           ],
                         ),
                       ),

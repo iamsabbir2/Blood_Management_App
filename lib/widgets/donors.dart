@@ -34,15 +34,112 @@ class DonorsList extends StatelessWidget {
               .where((doc) => doc.id != currentUser?.uid)
               .toList();
 
-          return ListView.builder(
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ListView.builder(
               itemCount: donors.length,
               itemBuilder: (ctx, index) {
                 final donor = donors[index];
                 return ListTile(
-                  title: Text(donor['name']),
-                  subtitle: Text('Blood Group: ${donor['bloodGroup']}'),
+                  minLeadingWidth: 43,
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'List Tile',
+                        ),
+                      ),
+                    );
+                  },
+                  leading: Text(
+                    '${donor['bloodGroup']}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  title: Row(
+                    children: [
+                      Icon(
+                        Icons.person,
+                      ),
+                      Text(
+                        donor['name'],
+                      ),
+                    ],
+                  ),
+                  subtitle: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_city,
+                          ),
+                          Text(
+                            'Tangail',
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.send,
+                          ),
+                          Text(
+                            'Can\'t Donate now!',
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.phone,
+                          ),
+                          Text(
+                            'hidden',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Chat',
+                              ),
+                            ),
+                          );
+                        },
+                        child: Icon(
+                          Icons.chat,
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Phone',
+                              ),
+                            ),
+                          );
+                        },
+                        child: Icon(
+                          Icons.phone,
+                        ),
+                      ),
+                    ],
+                  ),
                 );
-              });
+              },
+            ),
+          );
         },
       ),
     );
