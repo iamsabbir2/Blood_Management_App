@@ -126,6 +126,7 @@ class _SignUpState extends ConsumerState<SignUp> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       body: SingleChildScrollView(
         child: Stack(
           children: [

@@ -13,7 +13,9 @@ class _ChatsScreenState extends State<ChatsScreen> {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Text('Chat Screen'),
+      child: Text(
+        'Chat Screen',
+      ),
     );
   }
 }

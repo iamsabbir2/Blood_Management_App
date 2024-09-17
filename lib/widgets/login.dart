@@ -130,240 +130,233 @@ class _LoginState extends ConsumerState<Login> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Stack(
-          children: [
-            CustomPaint(
-              size: Size(width, height),
-              painter: HomeBackground(),
+      resizeToAvoidBottomInset: false,
+      body: Stack(
+        children: [
+          CustomPaint(
+            size: Size(width, height),
+            painter: HomeBackground(),
+          ),
+          Positioned(
+            top:
+                60, // Adjust based on your layout, slightly below "Welcome back"
+            left: 20,
+            child: Text(
+              'Login',
+              style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 30,
+                    color: Colors.white,
+                  ),
             ),
-            Positioned(
-              top:
-                  60, // Adjust based on your layout, slightly below "Welcome back"
-              left: 20,
-              child: Text(
-                'Login',
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 30,
-                      color: Colors.white,
-                    ),
-              ),
+          ),
+          Positioned(
+            top: 100, // Adjust based on your layout
+            left: 20,
+            child: Text(
+              'Welcome back',
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: Colors.white,
+                  ),
             ),
-            Positioned(
-              top: 100, // Adjust based on your layout
-              left: 20,
-              child: Text(
-                'Welcome back',
-                style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: Colors.white,
-                    ),
-              ),
-            ),
-            Positioned(
-              top: width * 0.75, // Adjust based on your layout
-              left: 20,
-              right: 20,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Form(
-                        key: _isPhone ? _formKey2 : _formKey,
-                        child: Column(
-                          children: [
-                            if (!_isPhone)
-                              TextFormField(
-                                validator: (value) {
-                                  if (value!.isEmpty) {
-                                    return 'Please enter your email';
-                                  }
-                                  return null;
-                                },
-                                onSaved: (value) {
-                                  setState(() {
-                                    _email = value!;
-                                  });
-                                },
-                                decoration: InputDecoration(
-                                  labelText: 'Email',
-                                  fillColor: Colors.white,
-                                  filled: true,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+          ),
+          Positioned(
+            top: width * 0.75, // Adjust based on your layout
+            left: 20,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Form(
+                      key: _isPhone ? _formKey2 : _formKey,
+                      child: Column(
+                        children: [
+                          if (!_isPhone)
+                            TextFormField(
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return 'Please enter your email';
+                                }
+                                return null;
+                              },
+                              onSaved: (value) {
+                                setState(() {
+                                  _email = value!;
+                                });
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Email',
+                                fillColor: Colors.white,
+                                filled: true,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                keyboardType: TextInputType.emailAddress,
                               ),
-                            const SizedBox(height: 10),
-                            if (!_isPhone)
-                              TextFormField(
-                                validator: (value) {
-                                  if (value!.isEmpty) {
-                                    return 'Please enter your password';
-                                  }
-                                  return null;
-                                },
-                                onSaved: (value) {
-                                  setState(() {
-                                    _password = value!;
-                                  });
-                                },
-                                decoration: InputDecoration(
-                                  labelText: 'Password',
-                                  fillColor: Colors.white,
-                                  filled: true,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                obscureText: true,
-                              ),
-                            // if (_isPhone)
-                            //   TextFormField(
-                            //     validator: (value) {
-                            //       if (value!.isEmpty) {
-                            //         return 'Enter your phone number';
-                            //       }
-                            //       return null;
-                            //     },
-                            //     onSaved: (value) {
-                            //       setState(() {
-                            //         _phone = value!;
-                            //       });
-                            //     },
-                            //     decoration: InputDecoration(
-                            //       labelText: 'Phone Number',
-                            //       fillColor: Colors.white,
-                            //       filled: true,
-                            //       border: OutlineInputBorder(
-                            //         borderRadius: BorderRadius.circular(8),
-                            //       ),
-                            //     ),
-                            //     keyboardType: TextInputType.phone,
-                            //   ),
-                            if (_isPhone)
-                              TextFormField(
-                                validator: (value) {
-                                  if (value!.isEmpty) {
-                                    return 'Enter your phone number';
-                                  }
-                                  return null;
-                                },
-                                onSaved: (value) {
-                                  _phone = _countryCode + value!;
-                                },
-                                decoration: InputDecoration(
-                                  labelText: 'Phone Number',
-                                  prefixText:
-                                      _countryCode, // Display country code as prefix
-                                  fillColor: Colors.white,
-                                  filled: true,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                keyboardType: TextInputType.phone,
-                              ),
-                          ],
-                        )),
-                    if (!_isPhone) const SizedBox(height: 20),
-                    if (!_isPhone)
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const ForgotPassword(),
+                              keyboardType: TextInputType.emailAddress,
                             ),
-                          );
-                        },
-                        child: const Text(
-                          'Forgot password?',
-                        ),
+                          const SizedBox(height: 10),
+                          if (!_isPhone)
+                            TextFormField(
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return 'Please enter your password';
+                                }
+                                return null;
+                              },
+                              onSaved: (value) {
+                                setState(() {
+                                  _password = value!;
+                                });
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Password',
+                                fillColor: Colors.white,
+                                filled: true,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              obscureText: true,
+                            ),
+                          // if (_isPhone)
+                          //   TextFormField(
+                          //     validator: (value) {
+                          //       if (value!.isEmpty) {
+                          //         return 'Enter your phone number';
+                          //       }
+                          //       return null;
+                          //     },
+                          //     onSaved: (value) {
+                          //       setState(() {
+                          //         _phone = value!;
+                          //       });
+                          //     },
+                          //     decoration: InputDecoration(
+                          //       labelText: 'Phone Number',
+                          //       fillColor: Colors.white,
+                          //       filled: true,
+                          //       border: OutlineInputBorder(
+                          //         borderRadius: BorderRadius.circular(8),
+                          //       ),
+                          //     ),
+                          //     keyboardType: TextInputType.phone,
+                          //   ),
+                          if (_isPhone)
+                            TextFormField(
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return 'Enter your phone number';
+                                }
+                                return null;
+                              },
+                              onSaved: (value) {
+                                _phone = _countryCode + value!;
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Phone Number',
+                                prefixText:
+                                    _countryCode, // Display country code as prefix
+                                fillColor: Colors.white,
+                                filled: true,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              keyboardType: TextInputType.phone,
+                            ),
+                        ],
+                      )),
+                  if (!_isPhone) const SizedBox(height: 20),
+                  if (!_isPhone)
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const ForgotPassword(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Forgot password?',
                       ),
-                    const SizedBox(height: 20),
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        if (_isLoading)
-                          const SizedBox(
+                    ),
+                  const SizedBox(height: 20),
+
+                  ElevatedButton(
+                    onPressed: _signin,
+                    style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                        backgroundColor: const Color.fromARGB(255, 234, 1, 1),
+                        elevation: 5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5),
+                        )),
+                    child: _isLoading
+                        ? SizedBox(
                             width: 24,
                             height: 24,
-                            child: const CircularProgressIndicator(),
-                          ),
-                        ElevatedButton(
-                          onPressed: (_isLoading)
-                              ? null
-                              : !_isPhone
-                                  ? _signin
-                                  : _signInWithPhone,
-                          style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 50),
-                              backgroundColor:
-                                  const Color.fromARGB(255, 234, 1, 1),
-                              elevation: 5,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(5),
-                              )),
-                          child: const Text(
-                            'Sign In',
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'SignIn',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
+                  ),
+
+                  if (!_isPhone)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Don\'t have an account?',
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const SignUp(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'SignUp',
+                          ),
                         ),
                       ],
                     ),
-                    if (!_isPhone)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'Don\'t have an account?',
+                  if (_isPhone) const SizedBox(height: 20),
+                  //const Text('Or sign in with'),
+                  //const SizedBox(height: 20),
+                  /* ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize:
+                                const Size(double.infinity, 50), // Button size
+                            backgroundColor: Colors.red[200],
                           ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const SignUp(),
-                                ),
-                              );
-                            },
-                            child: const Text(
-                              'SignUp',
-                            ),
-                          ),
-                        ],
-                      ),
-                    if (_isPhone) const SizedBox(height: 20),
-                    //const Text('Or sign in with'),
-                    //const SizedBox(height: 20),
-                    /* ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        minimumSize:
-                            const Size(double.infinity, 50), // Button size
-                        backgroundColor: Colors.red[200],
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPhone = !_isPhone;
-                        });
-                      },
-                      child: Text(!_isPhone
-                          ? 'Sign in with phone'
-                          : 'Sign in with email'),
-                    ),
-                    */
-                  ],
-                ),
+                          onPressed: () {
+                            setState(() {
+                              _isPhone = !_isPhone;
+                            });
+                          },
+                          child: Text(!_isPhone
+                              ? 'Sign in with phone'
+                              : 'Sign in with email'),
+                        ),
+                        */
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

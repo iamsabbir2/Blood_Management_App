@@ -10,6 +10,10 @@ class DonorsList extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Donors'),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        iconTheme: IconThemeData(
+          color: Colors.white,
+        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('users').snapshots(),
