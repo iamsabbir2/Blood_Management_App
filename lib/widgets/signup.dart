@@ -1,13 +1,27 @@
-import 'dart:async';
-
-import 'package:blood_management_app/authentication/email_verification.dart';
-import 'package:blood_management_app/background/home_background.dart';
+//packages
 import 'package:blood_management_app/providers/user_provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:blood_management_app/models/user.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:blood_management_app/background/home_background.dart';
+
+//widgets
+import '../widgets/custom_dropdown_button_field.dart';
+import '../widgets/custom_text_form_field.dart';
+import '../widgets/custom_elevated_button.dart';
+import '../widgets/postioned_text.dart';
+
+//pages
+import '../authentication/email_verification.dart';
+
+//services
+import '../services/navigation_service.dart';
+import '../services/auth_service.dart';
+
+//models
+import '../models/user_model.dart';
 
 class SignUp extends ConsumerStatefulWidget {
   const SignUp({super.key});
@@ -18,10 +32,20 @@ class SignUp extends ConsumerStatefulWidget {
 }
 
 class _SignUpState extends ConsumerState<SignUp> {
+  final List<String> items = [
+    'A+',
+    'A-',
+    'B+',
+    'B-',
+    'AB+',
+    'AB-',
+    'O+',
+    'O-',
+  ];
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-  String _countryCode = '+880';
+  final String _countryCode = '+880';
   var _name = '';
   var _email = '';
   var _phone = '';
@@ -30,371 +54,265 @@ class _SignUpState extends ConsumerState<SignUp> {
   bool _donor = false;
 
   final _formKey = GlobalKey<FormState>();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> _createAccount() async {
-    try {
-      UserCredential userCredential = await _auth
-          .createUserWithEmailAndPassword(email: _email, password: _password);
-
-      User? user = userCredential.user;
-      if (user != null) {
-        await _firestore.collection('users').doc(user.uid).set({
-          'name': _name,
-          'email': _email,
-          'phoneNumber': _phone,
-          'bloodGroup': _bloodGroup,
-          'isDonor': _donor,
-          'createdAt': Timestamp.now(),
-          'serverTimeStamp': FieldValue.serverTimestamp(),
-        });
-      }
-      // await _auth.createUserWithEmailAndPassword(
-      //     email: _email, password: _password);
-
-      //await _verifyEmail();
-    } on FirebaseAuthException catch (e) {
-      print('Failed to verify email : $e');
-    }
+  final auth = AuthService();
+  bool _isActive = false;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
+      body: kIsWeb
+          ? Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Blood Management App',
+                      style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 30,
+                          ),
+                    ),
+                    Text(
+                      'Create Your Account',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    Card(
+                      elevation: 10,
+                      child: SizedBox(
+                        width: 400,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: _form(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : Stack(
+              children: [
+                CustomPaint(
+                  size: Size(
+                    MediaQuery.of(context).size.width,
+                    MediaQuery.of(context).size.height,
+                  ),
+                  painter: HomeBackground(),
+                ),
+                _text(60, 'Sign Up', 30),
+                _text(100, 'Create Your Account', 20),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: _form(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
   }
 
-  Future<void> _onSaved() async {
-    setState(() {
-      _isActive = true;
-    });
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
+  Widget _textField(
+    String title,
+    String hintText,
+    String regEx,
+    Function(String) onSaved, {
+    String? errorMessage,
+    bool? obscureText,
+    TextCapitalization? textCapitalization,
+    String? prefixText,
+    TextInputType? keyboardType,
+    TextEditingController? passwordController,
+    TextEditingController? controller,
+    bool isItPassword = false,
+  }) {
+    return CustomTextFormField(
+      onSaved: onSaved,
+      regEx: regEx,
+      hintText: hintText,
+      title: title,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      errorMessage: errorMessage ?? 'Please enter a valid value',
+      textCapitalization: textCapitalization,
+      prefixText: prefixText,
+      passwordController: passwordController,
+      controller: controller,
+      isItPassword: isItPassword,
+    );
+  }
 
-      final userP = ref.read(userProvider.notifier);
-      final newUser = UserModel(
-        name: _name,
-        email: _email,
-        phoneNumber: _phone,
-        bloodGroup: _bloodGroup,
-        isDonor: _donor,
-      );
-
-      userP.setUser(newUser);
-
-      try {
-        await _createAccount();
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
+  Widget _form() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          _textField(
+            'Name',
+            'Name',
+            '',
+            (value) {
+              _name = value;
+            },
+            errorMessage: 'Please enter a valid name',
+            textCapitalization: TextCapitalization.words,
           ),
-        );
-      } finally {
-        setState(() {
-          _isActive = false;
-        });
-      }
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (ctx) {
-            return const EmailVerificationPage(
-              verificationStatus: 'Verificaition Page',
-            );
-          },
-        ),
-      );
-    }
-  }
-
-  void _gotoPage() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (ctx) {
-          return const EmailVerificationPage(
-            verificationStatus: 'Verificaition Page',
-          );
-        },
+          _textField(
+            'Email',
+            'Email',
+            '',
+            (value) {
+              _email = value;
+            },
+            errorMessage: 'Please enter a valid email',
+            keyboardType: TextInputType.emailAddress,
+          ),
+          _textField(
+            'Phone Number',
+            'Phone Number',
+            '',
+            (value) {
+              _phone = _countryCode + value;
+            },
+            errorMessage: 'Please enter a valid phone number',
+            prefixText: _countryCode,
+            keyboardType: TextInputType.number,
+          ),
+          _textField(
+            'Password',
+            'Password',
+            '',
+            (value) {
+              _password = value;
+            },
+            errorMessage: 'Please enter a valid password',
+            obscureText: true,
+            controller: _passwordController,
+            isItPassword: true,
+          ),
+          _textField(
+            'Confirm Password',
+            'Confirm Password',
+            '',
+            (value) {},
+            errorMessage: 'Password does not match',
+            obscureText: true,
+            controller: _confirmPasswordController,
+            passwordController: _passwordController,
+            isItPassword: true,
+          ),
+          _dropdownButton(),
+          _checkBox(),
+          _signupButton(),
+          const SizedBox(height: 8),
+          _dontHaveAnAccount(),
+        ],
       ),
     );
   }
 
-  bool _isActive = false;
-  @override
-  Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final height = MediaQuery.of(context).size.height;
-
-    print(width);
-    print(height);
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: false,
-      body: SingleChildScrollView(
-        child: Stack(
-          children: [
-            CustomPaint(
-              size: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height,
-              ),
-              painter: HomeBackground(),
-            ),
-            Positioned(
-              top: 60,
-              left: 20,
-              child: Text(
-                'Create Your \nAccount',
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 30,
-                      color: Colors.white,
-                    ),
-              ),
-            ),
-            Positioned(
-              top: width * 0.65,
-              left: 20,
-              right: 20,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            TextFormField(
-                              decoration: InputDecoration(
-                                labelText: 'Name',
-                                fillColor: Colors.white,
-                                filled: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  setState(() {
-                                    _isActive = false;
-                                  });
-                                  return 'Please enter your name';
-                                }
-                                return null;
-                              },
-                              onSaved: (newValue) {
-                                setState(() {
-                                  _name = newValue!;
-                                });
-                              },
-                              keyboardType: TextInputType.emailAddress,
-                            ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              decoration: InputDecoration(
-                                labelText: 'Email',
-                                fillColor: Colors.white,
-                                filled: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  setState(() {
-                                    _isActive = false;
-                                  });
-                                  return 'Please enter your email';
-                                }
-                                return null;
-                              },
-                              onSaved: (newValue) {
-                                setState(() {
-                                  _email = newValue!;
-                                });
-                              },
-                            ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              decoration: InputDecoration(
-                                prefixText: _countryCode,
-                                labelText: 'Phone Number',
-                                fillColor: Colors.white,
-                                filled: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              keyboardType: TextInputType.phone,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  setState(() {
-                                    _isActive = false;
-                                  });
-                                  return 'valid phone number';
-                                }
-                                return null;
-                              },
-                              onSaved: (newValue) {
-                                setState(() {
-                                  _phone = _countryCode + newValue!;
-                                });
-                              },
-                            ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _passwordController,
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                fillColor: Colors.white,
-                                filled: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  setState(() {
-                                    _isActive = false;
-                                  });
-                                  return 'Please enter your password';
-                                } else if (value.length < 8) {
-                                  setState(() {
-                                    _isActive = false;
-                                  });
-                                  return 'Password must be at least 8 characters';
-                                }
-                                return null;
-                              },
-                              onSaved: (newValue) {
-                                setState(() {
-                                  _password = newValue!;
-                                });
-                              },
-                              obscureText: true,
-                            ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _confirmPasswordController,
-                              decoration: InputDecoration(
-                                labelText: 'Confirm Password',
-                                fillColor: Colors.white,
-                                filled: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  setState(() {
-                                    _isActive = false;
-                                  });
-                                  return 'Please enter your password';
-                                } else if (value != _passwordController.text) {
-                                  setState(() {
-                                    _confirmPasswordController.clear();
-                                    _passwordController.clear();
-                                    _isActive = false;
-                                  });
-                                  return 'Passwords do not match';
-                                }
-                                return null;
-                              },
-                              obscureText: true,
-                            ),
-                          ],
-                        )),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        focusColor: Colors.green,
-                        labelText: 'Choose your blood group',
-                        border: const OutlineInputBorder(),
-                        fillColor:
-                            Theme.of(context).inputDecorationTheme.fillColor,
-                      ),
-                      value: _bloodGroup,
-                      items: <String>[
-                        'A+',
-                        'A-',
-                        'B+',
-                        'B-',
-                        'AB+',
-                        'AB-',
-                        'O+',
-                        'O-',
-                      ].map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _bloodGroup = newValue!;
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text(
-                        'As a donor',
-                      ),
-                      value: _donor,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          _donor = value!;
-                        });
-                      },
-                      activeColor: const Color.fromARGB(255, 255, 7, 7),
-                      controlAffinity: ListTileControlAffinity.leading,
-                    ),
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _isActive ? null : _onSaved,
-                          //onPressed: _isActive ? null : _gotoPage,
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(double.infinity, 50),
-                            backgroundColor: Theme.of(context).primaryColor,
-                          ),
-                          child: Text(
-                            'Sign Up',
-                            style:
-                                Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                    ),
-                          ),
-                        ),
-                        if (_isActive)
-                          const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.red,
-                            ),
-                          ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('Already have an account?'),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('Sign In'),
-                        ),
-                      ],
-                    )
-                  ],
-                ),
-              ),
-            ),
-          ],
+  Widget _dontHaveAnAccount() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text('Already have an account?'),
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Sign In'),
         ),
+      ],
+    );
+  }
+
+  Widget _checkBox() {
+    return CheckboxListTile(
+      title: const Text(
+        'As a donor',
       ),
+      value: _donor,
+      onChanged: (bool? value) {
+        setState(() {
+          _donor = value!;
+        });
+      },
+      activeColor: const Color.fromARGB(255, 255, 7, 7),
+      controlAffinity: ListTileControlAffinity.leading,
+    );
+  }
+
+  Widget _signupButton() {
+    return CustomElevatedButton(
+      isLoading: _isActive,
+      onPressed: () async {
+        setState(() {
+          _isActive = true;
+        });
+        if (_formKey.currentState!.validate()) {
+          _formKey.currentState!.save();
+
+          UserCredential? _user =
+              await auth.signUpWithEmailAndPassword(_email, _password);
+          if (_user != null) {
+            final user = UserModel(
+              bloodGroup: _bloodGroup,
+              canDonate: false,
+              contact: _phone,
+              email: _email,
+              isContactHidden: false,
+              isDonor: _donor,
+              isGoingToDonate: false,
+              isOnline: false,
+              isTyping: false,
+              lastActive: null,
+              lastDonationDate: null,
+              name: _name,
+              totalDonations: 0,
+              totalRequests: 0,
+              uid: _user.user!.uid,
+              wasRecentlyActive: false,
+            );
+
+            ref.watch(userProvider.notifier).addUser(user);
+            NavigationService().navigateToPage(
+              const EmailVerificationPage(),
+            );
+          }
+        }
+
+        setState(() {
+          _isActive = false;
+        });
+      },
+      title: 'Sign Up',
+    );
+  }
+
+  Widget _dropdownButton() {
+    return CustomDropdownButtonField(
+      items: items,
+      hintText: 'Select your blood group',
+      labelText: 'Blood Group',
+      onChanged: (value) {
+        _bloodGroup = value;
+      },
+      value: _bloodGroup,
+    );
+  }
+
+  Widget _text(double top, String text, double fontSize) {
+    return PositionedText(
+      text: text,
+      top: top,
+      fontSize: fontSize,
     );
   }
 }

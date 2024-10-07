@@ -1,57 +1,48 @@
+//packags
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class RequestLists extends StatelessWidget {
+//providers
+import '../providers/patient_provider.dart';
+
+class RequestLists extends ConsumerWidget {
   const RequestLists({super.key});
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final patientState = ref.watch(patientProvider);
+    final patients = patientState.data ?? [];
     return Scaffold(
       appBar: AppBar(
-        iconTheme: IconThemeData(
+        iconTheme: const IconThemeData(
           color: Colors.white,
         ),
-        title: Text(
+        title: const Text(
           'Request Lists',
         ),
-        backgroundColor: Theme.of(context).colorScheme.error,
       ),
-      body: StreamBuilder(
-        stream:
-            FirebaseFirestore.instance.collection('blood_requests').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
+      body: patientState.isLoading
+          ? const Center(
               child: CircularProgressIndicator(),
-            );
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Something wen\'t wrong',
-              ),
-            );
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(
-              child: Text(
-                'Currently there is no request',
-              ),
-            );
-          }
-          final requestLists = snapshot.data!.docs;
-          return ListView.builder(
-            itemCount: requestLists.length,
-            itemBuilder: (context, index) {
-              return ListTile(
-                onTap: () {},
-                title: Text(
-                  '${requestLists[index]['name']}',
-                ),
-              );
-            },
-          );
-        },
-      ),
+            )
+          : patientState.errorMessage != null
+              ? Center(
+                  child: Text('Error: ${patientState.errorMessage}'),
+                )
+              : patientState.data!.isEmpty
+                  ? const Center(
+                      child: Text('No requests found'),
+                    )
+                  : ListView.builder(
+                      itemCount: patients.length,
+                      itemBuilder: (context, index) {
+                        final patient = patients[index];
+                        return ListTile(
+                          title: Text(patient.name),
+                          subtitle: Text(patient.bloodGroup),
+                        );
+                      },
+                    ),
     );
   }
 }

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+// it's not active
 class CustomBackground extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
-    paint.color = const Color.fromARGB(255, 234, 1, 1);
+    paint.color = Color.fromRGBO(255, 23, 23, 1.0);
     paint.style = PaintingStyle.fill;
 
     final path = Path();

@@ -4,7 +4,7 @@ class HomeBackground extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     var paint = Paint()
-      ..color = const Color.fromARGB(255, 241, 11, 11)
+      ..color = Color.fromRGBO(255, 23, 23, 1.0)
       ..strokeWidth = 5
       ..style = PaintingStyle.fill;
 

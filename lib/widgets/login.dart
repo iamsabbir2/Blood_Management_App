@@ -1,13 +1,19 @@
-import 'package:blood_management_app/authentication/phone_signin.dart';
 import 'package:blood_management_app/background/home_background.dart';
-import 'package:blood_management_app/providers/phone_number_provider.dart';
-import 'package:blood_management_app/providers/verificationid_provider.dart';
-import 'package:blood_management_app/screens/tabs.dart';
-import 'package:blood_management_app/widgets/forgot_password.dart';
-import 'package:blood_management_app/widgets/signup.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'custom_text_form_field.dart';
+import 'package:flutter/foundation.dart';
+
+//services
+import '../services/navigation_service.dart';
+
+//provider
+import '../providers/auth_provider.dart';
+
+//widgets
+import 'postioned_text.dart';
+import 'custom_elevated_button.dart';
+import 'custom_text_button.dart';
 
 class Login extends ConsumerStatefulWidget {
   const Login({super.key});
@@ -19,345 +25,223 @@ class Login extends ConsumerStatefulWidget {
 }
 
 class _LoginState extends ConsumerState<Login> {
-  bool _isPhone = false;
-  String _email = '';
-  String _password = '';
+  String? _email;
+  String? _password;
   final _formKey = GlobalKey<FormState>();
-  final _formKey2 = GlobalKey<FormState>();
   bool _isLoading = false;
-  String _phone = '';
-
-  Future<void> _signInWithPhone() async {
-    if (_formKey2.currentState!.validate()) {
-      _formKey2.currentState!.save();
-
-      //ref.read(verificationIdProvider.notifier).state = verificationId;
-      ref.read(phoneProvider.notifier).state = _phone;
-      print(_phone);
-
-      try {
-        setState(() {
-          _isLoading = true;
-        });
-
-        await FirebaseAuth.instance.verifyPhoneNumber(
-          phoneNumber: _phone,
-          verificationCompleted: (phoneAuthCredential) {},
-          verificationFailed: (error) {
-            setState(() {
-              _isLoading = false;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Verification failed: ${error}')),
-            );
-          },
-          codeSent: (verificationId, forceResendingToken) async {
-            ref.read(verificationIdProvider.notifier).state = verificationId;
-            print('code sent hoyeche');
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('OTP sent to $_phone'),
-              ),
-            );
-
-            await Future.delayed(Duration(seconds: 5));
-
-            setState(() {
-              _isLoading = false;
-            });
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (ctx) {
-              return PhoneSignIn();
-            }));
-          },
-          codeAutoRetrievalTimeout: (verificationId) {},
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e.toString(),
-            ),
-          ),
-        );
-
-        print(e);
-      }
-    }
-  }
+  late double _deviceHeight;
+  late double _deviceWidth;
+  String? errorMessage;
 
   Future<void> _signin() async {
+    setState(() {
+      _isLoading = true;
+    });
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      print('Email: $_email');
-      print('Password: $_password');
-
+      final authService = ref.read(authServiceProvider);
       try {
-        setState(() {
-          _isLoading = true;
-        });
-        await FirebaseAuth.instance
-            .signInWithEmailAndPassword(email: _email, password: _password);
-
+        await authService.signInWithEmailAndPassword(_email!, _password!);
         setState(() {
           _isLoading = false;
         });
-
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => TabsScreen(),
-          ),
-        );
       } catch (e) {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
-        print(e);
+        if (e == 'user-not-found') {
+          errorMessage = 'User not found';
+        } else if (e == 'wrong-password') {
+          errorMessage = 'Wrong password';
+        } else if (e == 'invalid-email') {
+          errorMessage = 'Invalid email';
+        } else if (e == 'user-disabled') {
+          errorMessage = 'User disabled';
+        } else if (e == 'too-many-requests') {
+          errorMessage = 'Too many requests';
+        } else if (e == 'wrong-password') {
+          errorMessage = 'Wrong password';
+        } else {
+          errorMessage = 'An error occurred';
+        }
+        if (mounted) {
+          showDialog(
+              context: context,
+              builder: (ctx) {
+                return AlertDialog(
+                  title: const Text('Error'),
+                  content: Text(errorMessage!),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        NavigationService().goBack();
+                      },
+                      child: const Text('Ok'),
+                    )
+                  ],
+                );
+              });
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final height = MediaQuery.of(context).size.height;
-    final String _countryCode = "+880"; // Bangladesh country code
+    _deviceWidth = MediaQuery.of(context).size.width;
+    _deviceHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          CustomPaint(
-            size: Size(width, height),
-            painter: HomeBackground(),
-          ),
-          Positioned(
-            top:
-                60, // Adjust based on your layout, slightly below "Welcome back"
-            left: 20,
-            child: Text(
-              'Login',
-              style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 30,
-                    color: Colors.white,
-                  ),
-            ),
-          ),
-          Positioned(
-            top: 100, // Adjust based on your layout
-            left: 20,
-            child: Text(
-              'Welcome back',
-              style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    color: Colors.white,
-                  ),
-            ),
-          ),
-          Positioned(
-            top: width * 0.75, // Adjust based on your layout
-            left: 20,
-            right: 20,
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Form(
-                      key: _isPhone ? _formKey2 : _formKey,
-                      child: Column(
-                        children: [
-                          if (!_isPhone)
-                            TextFormField(
-                              validator: (value) {
-                                if (value!.isEmpty) {
-                                  return 'Please enter your email';
-                                }
-                                return null;
-                              },
-                              onSaved: (value) {
-                                setState(() {
-                                  _email = value!;
-                                });
-                              },
-                              decoration: InputDecoration(
-                                labelText: 'Email',
-                                fillColor: Colors.white,
-                                filled: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              keyboardType: TextInputType.emailAddress,
-                            ),
-                          const SizedBox(height: 10),
-                          if (!_isPhone)
-                            TextFormField(
-                              validator: (value) {
-                                if (value!.isEmpty) {
-                                  return 'Please enter your password';
-                                }
-                                return null;
-                              },
-                              onSaved: (value) {
-                                setState(() {
-                                  _password = value!;
-                                });
-                              },
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                fillColor: Colors.white,
-                                filled: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              obscureText: true,
-                            ),
-                          // if (_isPhone)
-                          //   TextFormField(
-                          //     validator: (value) {
-                          //       if (value!.isEmpty) {
-                          //         return 'Enter your phone number';
-                          //       }
-                          //       return null;
-                          //     },
-                          //     onSaved: (value) {
-                          //       setState(() {
-                          //         _phone = value!;
-                          //       });
-                          //     },
-                          //     decoration: InputDecoration(
-                          //       labelText: 'Phone Number',
-                          //       fillColor: Colors.white,
-                          //       filled: true,
-                          //       border: OutlineInputBorder(
-                          //         borderRadius: BorderRadius.circular(8),
-                          //       ),
-                          //     ),
-                          //     keyboardType: TextInputType.phone,
-                          //   ),
-                          if (_isPhone)
-                            TextFormField(
-                              validator: (value) {
-                                if (value!.isEmpty) {
-                                  return 'Enter your phone number';
-                                }
-                                return null;
-                              },
-                              onSaved: (value) {
-                                _phone = _countryCode + value!;
-                              },
-                              decoration: InputDecoration(
-                                labelText: 'Phone Number',
-                                prefixText:
-                                    _countryCode, // Display country code as prefix
-                                fillColor: Colors.white,
-                                filled: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              keyboardType: TextInputType.phone,
-                            ),
-                        ],
-                      )),
-                  if (!_isPhone) const SizedBox(height: 20),
-                  if (!_isPhone)
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const ForgotPassword(),
+      body: kIsWeb
+          ? Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Welcome back to\nBlood Management App',
+                      style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
                           ),
-                        );
-                      },
-                      child: const Text(
-                        'Forgot password?',
+                    ),
+                    Card(
+                      elevation: 10,
+                      child: SizedBox(
+                        width: 400,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: _form(),
+                        ),
                       ),
-                    ),
-                  const SizedBox(height: 20),
-
-                  ElevatedButton(
-                    onPressed: _signin,
-                    style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        backgroundColor: const Color.fromARGB(255, 234, 1, 1),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5),
-                        )),
-                    child: _isLoading
-                        ? SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            'SignIn',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
-
-                  if (!_isPhone)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Don\'t have an account?',
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const SignUp(),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            'SignUp',
-                          ),
-                        ),
-                      ],
-                    ),
-                  if (_isPhone) const SizedBox(height: 20),
-                  //const Text('Or sign in with'),
-                  //const SizedBox(height: 20),
-                  /* ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            minimumSize:
-                                const Size(double.infinity, 50), // Button size
-                            backgroundColor: Colors.red[200],
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isPhone = !_isPhone;
-                            });
-                          },
-                          child: Text(!_isPhone
-                              ? 'Sign in with phone'
-                              : 'Sign in with email'),
-                        ),
-                        */
-                ],
+                    )
+                  ],
+                ),
               ),
+            )
+          : Stack(
+              children: [
+                _backgroundPaint(),
+                _text(60, 'Login', 30),
+                _text(100, 'Welcome back', 20),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _form(),
+                ),
+              ],
             ),
+    );
+  }
+
+  Widget _backgroundPaint() {
+    return CustomPaint(
+      size: Size(
+        _deviceWidth,
+        _deviceHeight,
+      ),
+      painter: HomeBackground(),
+    );
+  }
+
+  Widget _text(double top, String text, double fontSize) {
+    return PositionedText(
+      text: text,
+      top: top,
+      fontSize: fontSize,
+    );
+  }
+
+  Widget _textField(String title, String hintText, String regEx,
+      TextInputType keyboardType, Function(String) onSaved,
+      {String? errorMessage, bool? obscureText, bool? isItPassword}) {
+    return CustomTextFormField(
+      onSaved: onSaved,
+      regEx: regEx,
+      hintText: hintText,
+      title: title,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      errorMessage: errorMessage ?? 'Please enter a valid value',
+      isItPassword: isItPassword ?? false,
+    );
+  }
+
+  Widget _form() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _textField(
+            'Email',
+            'Email',
+            '',
+            TextInputType.emailAddress,
+            (value) {
+              setState(() {
+                _email = value;
+              });
+            },
+            errorMessage: 'Please enter a valid email',
           ),
+          _textField(
+            'Password',
+            'Password',
+            '',
+            TextInputType.text,
+            (value) {
+              setState(() {
+                _password = value;
+              });
+            },
+            errorMessage: 'Please enter a valid password',
+            obscureText: true,
+            isItPassword: true,
+          ),
+          _forgotPassword(),
+          const SizedBox(height: 10),
+          _loginButton(),
+          const SizedBox(height: 10),
+          _dontHaveAnAccount(),
         ],
       ),
+    );
+  }
+
+  Widget _forgotPassword() {
+    return GestureDetector(
+      onTap: () {},
+      child: const Text(
+        'Forgot password?',
+      ),
+    );
+  }
+
+  Widget _loginButton() {
+    return CustomElevatedButton(
+      isLoading: _isLoading,
+      onPressed: _signin,
+      title: 'Login',
+    );
+  }
+
+  Widget _dontHaveAnAccount() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text(
+          'Don\'t have an account?',
+        ),
+        CustomTextButton(
+          onPressed: () {
+            NavigationService().navigateToRoute('/signup');
+          },
+          title: 'SignUp',
+        ),
+      ],
     );
   }
 }

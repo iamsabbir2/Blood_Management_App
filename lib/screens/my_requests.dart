@@ -1,59 +1,56 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../screens/show_request.dart';
 
-class MyRequests extends StatelessWidget {
+//package
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+//providers
+import '../providers/patient_provider.dart';
+
+//services
+import '../services/auth_service.dart';
+
+class MyRequests extends ConsumerStatefulWidget {
   const MyRequests({super.key});
+
+  @override
+  ConsumerState<MyRequests> createState() => _MyRequestsState();
+}
+
+class _MyRequestsState extends ConsumerState<MyRequests> {
+  final auth = AuthService();
+  void _showRequest() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (ctx) {
+          return const ShowRequest();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final _user = FirebaseAuth.instance.currentUser;
-    return StreamBuilder(
-      stream:
-          FirebaseFirestore.instance.collection('blood_requests').snapshots(),
-      builder: (index, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        }
+    final requests = ref.watch(patientProvider);
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Text('Something wen\'t wrong!'),
-          );
-        }
+    final myRequests = requests.data?.where((element) {
+          return element.currentUserUid == auth.currentUser!.uid;
+        }).toList() ??
+        [];
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(
-            child: Text('Oh, No! \nYou do not make any requests!'),
-          );
-        }
-
-        final myRequests = snapshot.data!.docs;
-        myRequests.where(
-          (element) {
-            return element['uid'] == _user!.uid;
-          },
-        );
-
-        myRequests.sort(
-          (a, b) {
-            return (b['timestap'] as Timestamp)
-                .compareTo(a['timestap'] as Timestamp);
-          },
-        );
-
-        return ListView.builder(
+    if (myRequests.isEmpty) {
+      return const Center(
+        child: Text('No requests found'),
+      );
+    } else {
+      return ListView.builder(
           itemCount: myRequests.length,
           itemBuilder: (context, index) {
             return ListTile(
-              title: Text(
-                '${myRequests[index]['name']}',
-              ),
+              title: Text(myRequests[index].name),
+              subtitle: Text(myRequests[index].bloodGroup),
             );
-          },
-        );
-      },
-    );
+          });
+    }
   }
 }

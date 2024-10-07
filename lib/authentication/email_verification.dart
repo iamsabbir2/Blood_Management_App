@@ -1,17 +1,17 @@
 import 'dart:async';
 
-import 'package:blood_management_app/authentication/phone_number_auth.dart';
-import 'package:blood_management_app/providers/user_provider.dart';
-import 'package:blood_management_app/screens/main_screen.dart';
 import 'package:blood_management_app/screens/tabs.dart';
 import 'package:blood_management_app/widgets/signup.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+//services
+import '../services/navigation_service.dart';
+
 class EmailVerificationPage extends ConsumerStatefulWidget {
-  const EmailVerificationPage({required this.verificationStatus});
-  final String verificationStatus;
+  const EmailVerificationPage({super.key});
+
   @override
   ConsumerState<EmailVerificationPage> createState() {
     return _EmailVerificationState();
@@ -19,7 +19,6 @@ class EmailVerificationPage extends ConsumerStatefulWidget {
 }
 
 class _EmailVerificationState extends ConsumerState<EmailVerificationPage> {
-  // String? phoneNumber = '';
   Timer? _timer;
   Timer? _timer2;
   Timer? _verificationTimer;
@@ -59,8 +58,7 @@ class _EmailVerificationState extends ConsumerState<EmailVerificationPage> {
   }
 
   Future<void> _verifyEmail() async {
-    User? user = FirebaseAuth.instance.currentUser;
-
+    User? user = _auth.currentUser;
     if (user != null && !user.emailVerified) {
       await user.sendEmailVerification();
     }
@@ -76,12 +74,7 @@ class _EmailVerificationState extends ConsumerState<EmailVerificationPage> {
       if (user != null && user.emailVerified) {
         timer.cancel();
 
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            // builder: (context) => PhoneVerificationPage(),
-            builder: (context) => TabsScreen(),
-          ),
-        );
+        NavigationService().navigateToRoute('/auth');
       }
     });
   }
@@ -142,7 +135,7 @@ class _EmailVerificationState extends ConsumerState<EmailVerificationPage> {
         await user.sendEmailVerification();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Verfication email sent'),
+            content: Text('Verfication email sent to ${user.email}'),
           ),
         );
       }
@@ -158,133 +151,114 @@ class _EmailVerificationState extends ConsumerState<EmailVerificationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final userP = ref.watch(userProvider)!;
-    //phoneNumber = userP.phoneNumber;
-    // final userVerificationId = ref.read(verificationIdProvider);
-
+    final user = _auth.currentUser!;
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Center(
-              child: CircleAvatar(
-                radius: 35,
-                backgroundColor: Colors.red,
-                child: Icon(
-                  Icons.email,
-                  size: 35,
-                  color: Colors.white,
-                ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Center(
+            child: CircleAvatar(
+              radius: 35,
+              backgroundColor: Colors.red,
+              child: Icon(
+                Icons.email,
+                size: 35,
+                color: Colors.white,
               ),
             ),
-            const SizedBox(
-              height: 20,
-            ),
-            Text(
-              'Verify your email address',
-              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 25,
-                  ),
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Text(
-              'We have sent a verification link to ${userP.email}',
-              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    fontSize: 17,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Text(
-              'Click on the link in 3 minutes to verify your email address',
-              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    fontSize: 17,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Text(
-              '${_countDown ~/ 60} : ${_countDown % 60} seconds remaining',
-              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    fontSize: 17,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(
-              height: 15,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed:
-                      _isResendButtonEnabled ? _resendVerificationEmail : null,
-                  child: Text(
-                    'Resend email',
+          ),
+          const SizedBox(
+            height: 20,
+          ),
+          Text(
+            'Verify your email address',
+            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 25,
+                ),
+          ),
+          const SizedBox(
+            height: 10,
+          ),
+          Text(
+            'We have sent a verification link to ${user.email}',
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  fontSize: 17,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(
+            height: 10,
+          ),
+          Text(
+            'Click on the link in 3 minutes to verify your email address',
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  fontSize: 17,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(
+            height: 10,
+          ),
+          Text(
+            '${_countDown ~/ 60} : ${_countDown % 60} seconds remaining',
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  fontSize: 17,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(
+            height: 15,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed:
+                    _isResendButtonEnabled ? _resendVerificationEmail : null,
+                child: Text(
+                  'Resend email',
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                      ),
+                ),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    )),
+              ),
+              const SizedBox(
+                width: 10,
+              ),
+              Directionality(
+                textDirection: TextDirection.rtl,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    await _auth.currentUser!.delete();
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => SignUp(),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.arrow_back, color: Colors.red),
+                  label: Text(
+                    'Return to SignUp',
                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
                           fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.red,
                         ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5),
-                      )),
                 ),
-                const SizedBox(
-                  width: 10,
-                ),
-                Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: TextButton.icon(
-                    onPressed: () async {
-                      await _auth.currentUser!.delete();
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => SignUp(),
-                        ),
-                      );
-                    },
-                    icon: Icon(Icons.arrow_back, color: Colors.red),
-                    label: Text(
-                      'Return to SignUp',
-                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.red,
-                          ),
-                    ),
-                  ),
-                ),
-              ],
-            )
-          ],
-        ),
+              ),
+            ],
+          )
+        ],
       ),
-
-      //Center(
-      //   child: Column(
-      //     mainAxisAlignment: MainAxisAlignment.center,
-      //     children: [
-      //       Text(userP.name),
-      //       Text(userP.email),
-      //       Text(userP.phoneNumber),
-      //       Text(userP.bloodGroup),
-      //       Text(userP.isDonor.toString()),
-      //       Text(widget.verificationStatus),
-      //     ],
-      //   ),
-      // ),
     );
   }
 }

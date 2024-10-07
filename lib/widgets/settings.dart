@@ -1,6 +1,6 @@
 import 'package:blood_management_app/screens/profile.dart';
 import 'package:blood_management_app/widgets/account.dart';
-import 'package:blood_management_app/widgets/chats.dart';
+
 import 'package:blood_management_app/widgets/notifications.dart';
 import 'package:blood_management_app/widgets/privacy.dart';
 import 'package:flutter/material.dart';
@@ -98,13 +98,13 @@ class _SettingsState extends State<Settings> {
             title: const Text('Chats'),
             subtitle: const Text('Theme, wallpaper and chat history'),
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (ctx) {
-                    return const Chats();
-                  },
-                ),
-              );
+              // Navigator.of(context).push(
+              //   MaterialPageRoute(
+              //     builder: (ctx) {
+              //       return const Chats();
+              //     },
+              //   ),
+              // );
             },
           ),
           ListTile(

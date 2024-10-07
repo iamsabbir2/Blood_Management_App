@@ -33,7 +33,6 @@ class ForgotPassword extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        iconTheme: Theme.of(context).iconTheme.copyWith(color: Colors.white),
         title: Text(
           'Forgot Password',
           style: Theme.of(context).textTheme.titleLarge!.copyWith(
