@@ -56,23 +56,5 @@ class ChatMessages extends StatelessWidget {
         );
       },
     );
-    // return FutureBuilder(
-    //   future: chatMessages,
-    //   builder: (ctx, snapshot) {
-    //     if (snapshot.connectionState == ConnectionState.waiting) {
-    //       return const Center(
-    //         child: CircularProgressIndicator(),
-    //       );
-    //     }
-    //     final messages = snapshot.data;
-    //     return ListView.builder(
-    //       itemCount: messages!.length,
-    //       itemBuilder: (ctx, index) {
-    //         final message = messages[index];
-    //         return Text(message.message);
-    //       },
-    //     );
-    //   },
-    // );
   }
 }
