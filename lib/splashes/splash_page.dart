@@ -1,6 +1,8 @@
 import 'package:blood_management_app/firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:logger/logger.dart';
 
 class SplashPage extends StatefulWidget {
   final VoidCallback onInitializationComplete;
@@ -10,6 +12,7 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
+  final Logger _logger = Logger();
   @override
   void initState() {
     super.initState();
@@ -51,6 +54,6 @@ class _SplashPageState extends State<SplashPage> {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print('Firebase initialized');
+    _logger.i('Firebase initialized');
   }
 }

@@ -74,13 +74,14 @@ class _EmailVerificationState extends ConsumerState<EmailVerificationPage> {
       if (user != null && user.emailVerified) {
         timer.cancel();
 
-        NavigationService().navigateToRoute('/auth');
+        NavigationService().navigateToRoute('/');
       }
     });
   }
 
   void _startVerificationTimer() {
-    _verificationTimer = Timer.periodic(Duration(seconds: 10), (timer) async {
+    _verificationTimer =
+        Timer.periodic(const Duration(seconds: 10), (timer) async {
       User? user = _auth.currentUser;
       await user?.reload();
 

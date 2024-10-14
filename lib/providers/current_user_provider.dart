@@ -1,4 +1,5 @@
 //packages
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 //models
@@ -13,10 +14,11 @@ class CurrentUserNotifier extends StateNotifier<DataState<UserModel>> {
 
   void fetchCurrentUser(String uid) async {
     try {
-      final user = await _databaseService.fetchCurrentUser(uid);
-      state = DataState.loaded(user!);
-    } catch (e) {
-      state = DataState.error(e.toString());
+      final user = await _databaseService.getUser(uid);
+      state = DataState.loaded(
+          UserModel.fromMap(user.data() as Map<String, dynamic>));
+    } on PlatformException catch (e) {
+      state = DataState.error(e.message!);
     }
   }
 }

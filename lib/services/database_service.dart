@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 //models
 import '../models/user_model.dart';
@@ -46,6 +47,7 @@ class DatabaseService {
     try {
       QuerySnapshot snapshot =
           await _firestore.collection('blood_requests').get();
+
       return snapshot.docs.map((doc) {
         print('successfully fetched');
 
@@ -186,12 +188,146 @@ class DatabaseService {
     }
   }
 
-  Future<List<MessageModel>> fetchMessages(String chatId) async {
+  Stream<List<ChatModel>> fetchAllChats(String currentUserId) {
+    return _firestore
+        .collection('chats')
+        .where('particpants', arrayContains: currentUserId)
+        .snapshots()
+        .asyncMap((snapshot) async {
+      List<ChatModel> chats = [];
+      for (var doc in snapshot.docs) {
+        UserModel otherUser;
+        Map<String, dynamic> data = doc.data();
+        List<String> participants = data['particpants'].cast<String>();
+        final lastMessage = data['lastMessage'];
+        final otherUserUid = participants[0] == currentUserId
+            ? participants[1]
+            : participants[0];
+
+        final userSnapshot = await getUser(otherUserUid);
+
+        otherUser =
+            UserModel.fromMap(userSnapshot.data() as Map<String, dynamic>);
+
+        final messageSnapshot = await _firestore
+            .collection('chats')
+            .doc(doc.id)
+            .collection('messages')
+            .orderBy('time', descending: true)
+            .limit(1)
+            .get();
+
+        final message = messageSnapshot.docs.first.data();
+
+        chats.add(
+          ChatModel(
+            uid: doc.id,
+            otherUser: otherUser,
+            messages: MessageModel.fromJson(message),
+          ),
+        );
+      }
+      return chats;
+    });
+    // final QuerySnapshot snapshot = await
+    //     .where('particpants', arrayContains: currentUserId)
+    //     .get();
+
+    // List<ChatModel> chats = [];
+
+    // for (var doc in snapshot.docs) {
+    //   UserModel otherUser;
+    //   Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    //   List<String> participants = data['particpants'].cast<String>();
+    //   final lastMessage = data['lastMessage'];
+    //   final otherUserUid =
+    //       participants[0] == currentUserId ? participants[1] : participants[0];
+
+    //   final userSnapshot = await getUser(otherUserUid);
+
+    //   otherUser =
+    //       UserModel.fromMap(userSnapshot.data() as Map<String, dynamic>);
+
+    //   final messageSnapshot = await _firestore
+    //       .collection('chats')
+    //       .doc(doc.id)
+    //       .collection('messages')
+    //       .orderBy('time', descending: true)
+    //       .limit(1)
+    //       .get();
+
+    //   final message = messageSnapshot.docs.first.data();
+
+    //   chats.add(
+    //     ChatModel(
+    //       uid: doc.id,
+    //       otherUser: otherUser,
+    //       messages: MessageModel.fromJson(message),
+    //       lastMessage: lastMessage,
+    //     ),
+    //   );
+    // }
+
+    // return chats;
+  }
+
+  Future<List<ChatModel>> fetchChats(String uid) async {
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection('chats')
+          .where('particpants', arrayContains: uid)
+          .get();
+
+      List<ChatModel> chats = [];
+
+      for (var doc in snapshot.docs) {
+        UserModel otherUser;
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        List<String> participants = data['particpants'].cast<String>();
+        final lastMessage = data['lastMessage'];
+        final otherUserUid =
+            participants[0] == uid ? participants[1] : participants[0];
+
+        final userSnapshot = await getUser(otherUserUid);
+        otherUser =
+            UserModel.fromMap(userSnapshot.data() as Map<String, dynamic>);
+
+        final messageSnapshot = await _firestore
+            .collection('chats')
+            .doc(doc.id)
+            .collection('messages')
+            .orderBy('time', descending: true)
+            .limit(1)
+            .get();
+
+        final message = messageSnapshot.docs.first.data();
+
+        chats.add(
+          ChatModel(
+            uid: doc.id,
+            otherUser: otherUser,
+            messages: MessageModel.fromJson(message),
+          ),
+        );
+        chats.sort((a, b) {
+          return b.messages!.time.compareTo(a.messages!.time);
+        });
+      }
+      return chats.toList();
+    } catch (e) {
+      print('problem in fetchChats');
+      print(e);
+      return [];
+    }
+  }
+
+  Future<List<MessageModel>> fetchMessage(String chatId) async {
     try {
       QuerySnapshot snapshot = await _firestore
           .collection('chats')
           .doc(chatId)
           .collection('messages')
+          .orderBy('time', descending: true)
           .get();
       return snapshot.docs.map((doc) {
         return MessageModel.fromJson(doc.data() as Map<String, dynamic>);
@@ -203,56 +339,13 @@ class DatabaseService {
     }
   }
 
-  Future<ChatModel> getChats(String uid) async {
-    try {
-      QuerySnapshot snapshot = await _firestore
-          .collection('chats')
-          .where('particpants', arrayContains: uid)
-          .get();
-
-      ChatModel chatModel = ChatModel();
-
-      for (var doc in snapshot.docs) {
-        UserModel otherUser;
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        //print(data);
-        List<String> participants = data['particpants'].cast<String>();
-        final otherUserUid =
-            participants[0] == uid ? participants[1] : participants[0];
-
-        final userSnapshot = await getUser(otherUserUid);
-
-        otherUser =
-            UserModel.fromMap(userSnapshot.data() as Map<String, dynamic>);
-
-        final messageStream = await _firestore
-            .collection('chats')
-            .doc(doc.id)
-            .collection('messages')
-            .snapshots();
-        print('messageStream: $messageStream');
-
-        messageStream.listen((messageSnapshot) {
-          print('messageSnapshot: $messageSnapshot');
-          final message = messageSnapshot.docs.map((doc) {
-            return MessageModel.fromJson(doc.data());
-          }).toList();
-
-          chatModel = ChatModel(
-            uid: doc.id,
-            otherUser: otherUser,
-            messages: message,
-          );
-        });
-
-        print('otherUser: $otherUser');
-      }
-      return chatModel;
-    } catch (e) {
-      print('problem in getChats');
-      print(e);
-      return ChatModel();
-    }
+  Stream<QuerySnapshot> fetchMessages(String chatID) {
+    return _firestore
+        .collection('chats')
+        .doc(chatID)
+        .collection('messages')
+        .orderBy('time', descending: true)
+        .snapshots();
   }
 
   Future<void> updateLastMessage(String chatId, MessageModel message) async {

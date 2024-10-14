@@ -10,7 +10,7 @@ import '../services/auth_service.dart';
 import '../services/database_service.dart';
 
 //providers
-import '../providers/message_provider.dart';
+import '../providers/chat_stream_provider.dart';
 
 class NewMessage extends ConsumerStatefulWidget {
   final UserModel user;
@@ -33,12 +33,6 @@ class _NewMessageState extends ConsumerState<NewMessage> {
   bool _isSending = false;
   late String chatId;
 
-  @override
-  void dispose() {
-    _messageController.dispose();
-    super.dispose();
-  }
-
   void _submitMessage() async {
     final enteredMessage = _messageController.text;
     if (enteredMessage.isEmpty) {
@@ -57,7 +51,7 @@ class _NewMessageState extends ConsumerState<NewMessage> {
       isSent: true,
     );
 
-    await ref.read(messageProvider.notifier).addMessage(chatId, message);
+    ref.read(chatStreamProvider.notifier).addMessage(chatId, message);
 
     _messageController.clear();
 
@@ -72,7 +66,6 @@ class _NewMessageState extends ConsumerState<NewMessage> {
     _databaseService = DatabaseService();
     chatId = _databaseService.getChatId(
         _authService.currentUser!.uid, widget.user.uid);
-    print('chatId: $chatId');
     return Padding(
       padding: const EdgeInsets.only(
         left: 15,

@@ -7,8 +7,8 @@ class NavigationService {
     navigatorKey.currentState?.popAndPushNamed(route);
   }
 
-  void navigateToRoute(String route, {dynamic arguments}) {
-    navigatorKey.currentState?.pushNamed(route, arguments: arguments);
+  Future<dynamic> navigateToRoute(String route, {Object? arguments}) {
+    return navigatorKey.currentState!.pushNamed(route, arguments: arguments);
   }
 
   void navigateToPage(Widget page) {

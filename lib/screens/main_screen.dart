@@ -1,6 +1,10 @@
+import 'package:blood_management_app/models/message_model.dart';
 import 'package:blood_management_app/models/patient_model.dart';
+import 'package:blood_management_app/providers/chat_stream_provider.dart';
 import 'package:blood_management_app/providers/patient_provider.dart';
+import 'package:blood_management_app/services/database_service.dart';
 import 'package:blood_management_app/widgets/edit_request.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 //packages
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -35,6 +39,8 @@ class _BmaScreenState extends ConsumerState<BmaScreen> {
   late List<PatientModel> requests;
   late AuthService _authService;
   late DataState<UserModel> currentUserState;
+  late bool _isGoingToDonate;
+  late DatabaseService _databaseService;
 
   @override
   void dispose() {
@@ -47,18 +53,51 @@ class _BmaScreenState extends ConsumerState<BmaScreen> {
   }
 
   void _donate(PatientModel request) {
-    ref
-        .watch(userProvider.notifier)
-        .updateIsGoingToDonate(currentUserState.data!.uid, true);
-    ref
-        .watch(patientProvider.notifier)
-        .updateNeedBloodUnits(request.requestId, request.units - 1);
-
-    if (request.units == 0) {
+    setState(() {
+      _isGoingToDonate = true;
+    });
+    try {
+      ref
+          .watch(userProvider.notifier)
+          .updateIsGoingToDonate(currentUserState.data!.uid, true);
       ref
           .watch(patientProvider.notifier)
-          .updateIsRequestCompleted(request.requestId, true);
+          .updateNeedBloodUnits(request.requestId, request.units - 1);
+
+      if (request.units == 0) {
+        ref
+            .watch(patientProvider.notifier)
+            .updateIsRequestCompleted(request.requestId, true);
+      }
+      final chatId = _databaseService.getChatId(
+          _authService.currentUser!.uid, request.currentUserUid);
+      final message = MessageModel(
+        messageId: '',
+        message: 'I am going to donate blood to your patient',
+        senderUid: _authService.currentUser!.uid,
+        receiverUid: request.currentUserUid,
+        time: Timestamp.now().toDate().toIso8601String(),
+      );
+      ref.read(chatStreamProvider.notifier).addMessage(chatId, message);
+      ref
+          .read(currentUserProvider.notifier)
+          .fetchCurrentUser(request.currentUserUid);
+      final otherUserState = ref.watch(currentUserProvider);
+      NavigationService().navigateToRoute(
+        '/chat',
+        arguments: otherUserState.data,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(' Thanks for Donation confirming!'),
+        ),
+      );
+    } catch (e) {
+      print(e);
     }
+    setState(() {
+      _isGoingToDonate = false;
+    });
   }
 
   void _editRequest(PatientModel request) {
@@ -69,10 +108,15 @@ class _BmaScreenState extends ConsumerState<BmaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    requestState = ref.watch(patientProvider);
-    requests = requestState.data ?? [];
-    currentUserState = ref.watch(currentUserProvider);
     _authService = AuthService();
+    _databaseService = DatabaseService();
+    requestState = ref.watch(patientProvider);
+    _isGoingToDonate = false;
+    requests = requestState.data ?? [];
+    ref
+        .read(currentUserProvider.notifier)
+        .fetchCurrentUser(_authService.currentUser!.uid);
+    currentUserState = ref.watch(currentUserProvider);
 
     return GestureDetector(
       onTap: () {
@@ -285,62 +329,84 @@ class _BmaScreenState extends ConsumerState<BmaScreen> {
 
   Widget _donateButton(PatientModel request) {
     return CustomElevatedButton(
-      isLoading: false,
-      onPressed: currentUserState.isLoading
-          ? () {
-              showDialog(
-                  context: context,
-                  builder: (context) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  });
-            }
-          : currentUserState.errorMessage != null
+      isLoading: _isGoingToDonate,
+      onPressed: currentUserState.data!.isGoingToDonate
+          ? null
+          : currentUserState.isLoading
               ? () {
                   showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text('Error'),
-                          content: Text(currentUserState.errorMessage!),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        );
-                      });
+                    context: context,
+                    builder: (context) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    },
+                  );
                 }
-              : () {
-                  showDialog(
-                      context: context,
-                      builder: (ctx) {
-                        return AlertDialog(
-                          title: const Text('Donate'),
-                          content:
-                              const Text('Are you sure you want to donate?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                _donate(request);
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text('Yes'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text('No'),
-                            ),
-                          ],
-                        );
-                      });
-                },
+              : currentUserState.errorMessage != null
+                  ? () {
+                      showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text('Error'),
+                              content: Text(currentUserState.errorMessage!),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('OK'),
+                                ),
+                              ],
+                            );
+                          });
+                    }
+                  : () {
+                      showDialog(
+                          context: context,
+                          builder: (ctx) {
+                            return AlertDialog(
+                              title: const Text('Donate'),
+                              content: const Text(
+                                  'Are you sure you want to donate?'),
+                              actions: [
+                                Row(
+                                  children: [
+                                    const Spacer(),
+                                    Expanded(
+                                      child: CustomElevatedButton(
+                                        isLoading: _isGoingToDonate,
+                                        onPressed: () {
+                                          _donate(request);
+                                          NavigationService().goBack();
+                                        },
+                                        title: 'Yes',
+                                        width: 20,
+                                        height: 35,
+                                      ),
+                                    ),
+                                    // TextButton(
+                                    //   onPressed: () {
+                                    //     _donate(request);
+                                    //     Navigator.of(context).pop();
+                                    //   },
+                                    //   child: const Text('Yes'),
+                                    // ),
+                                    Expanded(
+                                      child: TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text('No'),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              ],
+                            );
+                          });
+                    },
       title: 'Donate Now!',
       width: 40,
       height: 45,
