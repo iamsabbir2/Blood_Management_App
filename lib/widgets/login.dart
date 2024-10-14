@@ -1,8 +1,14 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:blood_management_app/background/home_background.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'custom_text_form_field.dart';
 import 'package:flutter/foundation.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 //services
 import '../services/navigation_service.dart';
@@ -32,13 +38,68 @@ class _LoginState extends ConsumerState<Login> {
   late double _deviceHeight;
   late double _deviceWidth;
   String? errorMessage;
+  bool _isConnected = true;
+
+  StreamSubscription<List<ConnectivityResult>>? subscription;
+  List<ConnectivityResult>? connectivityResult;
+  @override
+  initState() {
+    super.initState();
+
+    subscription = Connectivity()
+        .onConnectivityChanged
+        .listen((List<ConnectivityResult> result) {
+      setState(() {
+        connectivityResult = result;
+        if (connectivityResult!.contains(ConnectivityResult.none)) {
+          _isConnected = false;
+          Logger().i('No internet connection');
+        } else {
+          _isConnected = true;
+          Logger().i('Internet connection available');
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    subscription!.cancel();
+    super.dispose();
+  }
 
   Future<void> _signin() async {
     setState(() {
       _isLoading = true;
     });
+
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+
+      if (!_isConnected) {
+        showDialog(
+            context: context,
+            builder: (ctx) {
+              return AlertDialog(
+                title: const Text('Error'),
+                content: const Text(
+                  'No internet connection. Please connect your internet',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      NavigationService().goBack();
+                    },
+                    child: const Text('Ok'),
+                  )
+                ],
+              );
+            });
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
 
       final authService = ref.read(authServiceProvider);
       try {
@@ -47,20 +108,24 @@ class _LoginState extends ConsumerState<Login> {
           _isLoading = false;
         });
       } catch (e) {
-        if (e == 'user-not-found') {
-          errorMessage = 'User not found';
-        } else if (e == 'wrong-password') {
-          errorMessage = 'Wrong password';
-        } else if (e == 'invalid-email') {
-          errorMessage = 'Invalid email';
-        } else if (e == 'user-disabled') {
-          errorMessage = 'User disabled';
-        } else if (e == 'too-many-requests') {
-          errorMessage = 'Too many requests';
-        } else if (e == 'wrong-password') {
-          errorMessage = 'Wrong password';
-        } else {
-          errorMessage = 'An error occurred';
+        if (e is FirebaseAuthException) {
+          switch (e.code) {
+            case 'user-not-found':
+              errorMessage = 'User not found';
+              break;
+            case 'wrong-password':
+              errorMessage = 'Wrong password';
+              break;
+            case 'invalid-email':
+              errorMessage = 'Invalid email';
+              break;
+            case 'invalid-credential':
+              errorMessage = 'Invalid credential';
+              break;
+            default:
+              errorMessage = 'An error occurred';
+              break;
+          }
         }
         if (mounted) {
           showDialog(
@@ -84,6 +149,10 @@ class _LoginState extends ConsumerState<Login> {
           });
         }
       }
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -117,7 +186,7 @@ class _LoginState extends ConsumerState<Login> {
                           child: _form(),
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -131,6 +200,18 @@ class _LoginState extends ConsumerState<Login> {
                   padding: const EdgeInsets.all(16.0),
                   child: _form(),
                 ),
+                if (!_isConnected)
+                  const Positioned(
+                    bottom: 20,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Text(
+                        'Connecting...',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ),
               ],
             ),
     );

@@ -32,6 +32,7 @@ void main() async {
         FirebaseMessaging.onBackgroundMessage(
             _firebaseMessageingBackgroundHandler);
         _logger.i('Firebase Messaging Background Handler initialized');
+
         runApp(
           const ProviderScope(
             child: MyApp(),
