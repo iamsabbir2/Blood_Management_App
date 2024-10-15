@@ -42,7 +42,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyCIVvpqw8lAMDmjVjviTVO4uCa62BGvsJo',
-    appId: '1:454925533198:web:ff0b6b588f1b466facbc5f',
+    appId: '1:454925533198:web:282d542b14390a7bacbc5f',
     messagingSenderId: '454925533198',
     projectId: 'bloodmanagementapp-b2314',
     authDomain: 'bloodmanagementapp-b2314.firebaseapp.com',
@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyD3xTQy9bS6xyQP5GvM-JliG5tFpQdtEsc',
-    appId: '1:454925533198:android:0d82812335157dfbacbc5f',
+    appId: '1:454925533198:android:afe76e144809154eacbc5f',
     messagingSenderId: '454925533198',
     projectId: 'bloodmanagementapp-b2314',
     storageBucket: 'bloodmanagementapp-b2314.appspot.com',
@@ -77,10 +77,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyCIVvpqw8lAMDmjVjviTVO4uCa62BGvsJo',
-    appId: '1:454925533198:web:1b3dc2f57840e18cacbc5f',
+    appId: '1:454925533198:web:bf99cf563ec043aeacbc5f',
     messagingSenderId: '454925533198',
     projectId: 'bloodmanagementapp-b2314',
     authDomain: 'bloodmanagementapp-b2314.firebaseapp.com',
     storageBucket: 'bloodmanagementapp-b2314.appspot.com',
   );
+
 }

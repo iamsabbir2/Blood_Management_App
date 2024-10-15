@@ -1,7 +1,7 @@
 import 'package:blood_management_app/widgets/chat_messages.dart';
 import 'package:flutter/material.dart';
 import '../widgets/new_messages.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 //models
 import '../models/user_model.dart';
 
@@ -12,6 +12,14 @@ class ChatScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Future<void> _makePhoneCall(String phoneNumber) async {
+      final Uri launchUri = Uri(
+        scheme: 'tel',
+        path: phoneNumber,
+      );
+      await launchUrl(launchUri);
+    }
+
     final args = ModalRoute.of(context)!.settings.arguments as UserModel;
     return Scaffold(
       appBar: AppBar(
@@ -22,12 +30,8 @@ class ChatScreen extends StatelessWidget {
           if (!args.isContactHidden)
             IconButton(
               icon: const Icon(Icons.phone),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Call'),
-                  ),
-                );
+              onPressed: () async {
+                await _makePhoneCall(args.contact);
               },
             ),
           IconButton(

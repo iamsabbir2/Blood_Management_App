@@ -6,6 +6,11 @@ class PushNotificationService {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
+  Future<String?> getFcmToken() async {
+    String? token = await _firebaseMessaging.getToken();
+    return token;
+  }
+
   Future<void> initialize() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');

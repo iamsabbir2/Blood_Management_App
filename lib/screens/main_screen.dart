@@ -5,10 +5,14 @@ import 'package:blood_management_app/providers/patient_provider.dart';
 import 'package:blood_management_app/services/database_service.dart';
 import 'package:blood_management_app/widgets/edit_request.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 //packages
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:logger/logger.dart';
 //pages
 import '../screens/request_lists.dart';
 //models
@@ -34,6 +38,61 @@ class BmaScreen extends ConsumerStatefulWidget {
 }
 
 class _BmaScreenState extends ConsumerState<BmaScreen> {
+  Future<void> _requestNotificationPermissions() async {
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      announcement: true,
+      badge: true,
+      sound: true,
+    );
+  }
+
+  void _setupTokenRefreshListener() {
+    Logger().i('Setting up token refresh checker');
+    _checkToken();
+    // Periodically check for token updates every 24 hours
+    Future.delayed(Duration(hours: 24), _checkToken);
+  }
+
+  Future<void> _checkToken() async {
+    try {
+      String? token;
+      kIsWeb
+          ? token = await FirebaseMessaging.instance.getToken(
+              vapidKey:
+                  'BE7twew0v0Yt-fDD68pP40FgH2u6wReDBRG-RHFjdwUKNmx-IXxbN8N0S8Piqmm7GGrMmBjqinqVTCr32wXEANw')
+          : token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        Logger().i('Token: $token');
+        final authService = AuthService();
+        final databaseService = DatabaseService();
+        final currentUserState = ref.watch(currentUserProvider);
+
+        // Use the services as needed
+        if (FirebaseAuth.instance.currentUser != null) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(FirebaseAuth.instance.currentUser!.uid)
+              .update({
+            'fcmToken': token,
+          });
+          Logger().i('Token updated successfully');
+        } else {
+          Logger().e('No current user found');
+        }
+      }
+    } catch (e) {
+      Logger().e('Error in token refresh checker: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _requestNotificationPermissions();
+    _setupTokenRefreshListener();
+  }
+
   final _pageController = PageController();
   late DataState<List<PatientModel>> requestState;
   late List<PatientModel> requests;

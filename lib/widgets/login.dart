@@ -51,6 +51,7 @@ class _LoginState extends ConsumerState<Login> {
         .listen((List<ConnectivityResult> result) {
       setState(() {
         connectivityResult = result;
+
         if (connectivityResult!.contains(ConnectivityResult.none)) {
           _isConnected = false;
           Logger().i('No internet connection');

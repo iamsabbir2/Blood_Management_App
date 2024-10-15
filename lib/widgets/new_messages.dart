@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -32,6 +33,12 @@ class _NewMessageState extends ConsumerState<NewMessage> {
   final TextEditingController _messageController = TextEditingController();
   bool _isSending = false;
   late String chatId;
+  Future<void> sendNotification(String recieverId, String message) async {
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(recieverId)
+        .get();
+  }
 
   void _submitMessage() async {
     final enteredMessage = _messageController.text;
@@ -48,10 +55,12 @@ class _NewMessageState extends ConsumerState<NewMessage> {
       time: DateTime.now().toIso8601String(),
       isDelivered: false,
       isRead: false,
-      isSent: true,
+      isSent: false,
     );
 
     ref.read(chatStreamProvider.notifier).addMessage(chatId, message);
+    //sent message successfully
+    //update sent message
 
     _messageController.clear();
 

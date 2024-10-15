@@ -17,6 +17,7 @@ class UserModel {
   bool? wasRecentlyActive;
   DateTime? lastActive;
   bool isTyping;
+  String? fcmToken;
 
   UserModel({
     required this.uid,
@@ -36,6 +37,7 @@ class UserModel {
     this.wasRecentlyActive,
     this.lastActive,
     required this.isTyping,
+    this.fcmToken,
   });
 
   Map<String, dynamic> toMap() {
@@ -56,6 +58,7 @@ class UserModel {
       'totalRequests': totalRequests,
       'uid': uid,
       'wasRecentlyActive': wasRecentlyActive,
+      'fcmToken': fcmToken,
     };
   }
 
@@ -81,6 +84,7 @@ class UserModel {
           : null,
       isTyping: data['isTyping'],
       uid: data['uid'],
+      fcmToken: data['fcmToken'],
     );
   }
 }

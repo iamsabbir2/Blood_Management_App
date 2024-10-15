@@ -19,6 +19,7 @@ import '../authentication/email_verification.dart';
 //services
 import '../services/navigation_service.dart';
 import '../services/auth_service.dart';
+import '../services/push_notification_service.dart';
 
 //models
 import '../models/user_model.dart';
@@ -32,6 +33,7 @@ class SignUp extends ConsumerStatefulWidget {
 }
 
 class _SignUpState extends ConsumerState<SignUp> {
+  late final PushNotificationService _pushNotificationService;
   final List<String> items = [
     'A+',
     'A-',
@@ -59,6 +61,7 @@ class _SignUpState extends ConsumerState<SignUp> {
   bool _isActive = false;
   @override
   Widget build(BuildContext context) {
+    _pushNotificationService = PushNotificationService();
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
@@ -261,6 +264,8 @@ class _SignUpState extends ConsumerState<SignUp> {
 
           UserCredential? _user =
               await auth.signUpWithEmailAndPassword(_email, _password);
+
+          String? fcmToken = await _pushNotificationService.getFcmToken();
           if (_user != null) {
             final user = UserModel(
               bloodGroup: _bloodGroup,
@@ -279,6 +284,7 @@ class _SignUpState extends ConsumerState<SignUp> {
               totalRequests: 0,
               uid: _user.user!.uid,
               wasRecentlyActive: false,
+              fcmToken: fcmToken,
             );
 
             ref.watch(userProvider.notifier).addUser(user);

@@ -13,6 +13,9 @@ import '../services/navigation_service.dart';
 //providers
 import '../providers/chat_provider.dart';
 
+//uitility functions
+import '../utility_functions/chat_times.dart';
+
 class ChatsScreen extends ConsumerStatefulWidget {
   const ChatsScreen({
     super.key,
@@ -78,14 +81,54 @@ class _ChatsScreenState extends ConsumerState<ChatsScreen> {
                       itemCount: chatState.data!.length,
                       itemBuilder: (context, index) {
                         final chat = chatState.data![index];
+
                         return ListTile(
-                            title: Text(chat.otherUser!.name),
-                            subtitle: Text(chat.messages!.message),
-                            trailing: Text(chat.messages!.time),
-                            onTap: () {
-                              NavigationService().navigateToRoute('/chat',
-                                  arguments: chat.otherUser);
-                            });
+                          leading: const CircleAvatar(
+                            backgroundImage: NetworkImage(
+                                'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'),
+                          ),
+                          horizontalTitleGap: 8,
+                          title: Text(chat.otherUser.name),
+                          subtitle: Row(
+                            children: [
+                              if (chat.messages.senderUid ==
+                                  _authService.currentUser!.uid) ...[
+                                if (chat.messages.isRead)
+                                  const Icon(
+                                    Icons.done_all,
+                                    size: 16,
+                                    color: Colors.blueAccent,
+                                  ),
+                                if (chat.messages.isDelivered)
+                                  const Icon(
+                                    Icons.done_all,
+                                    size: 16,
+                                    color: Colors.grey,
+                                  ),
+                                if (chat.messages.isSent)
+                                  const Icon(
+                                    Icons.done,
+                                    size: 16,
+                                    color: Colors.grey,
+                                  ),
+                                const SizedBox(width: 4),
+                              ],
+                              Expanded(
+                                child: Text(
+                                  chat.messages.message,
+                                  style: const TextStyle(
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          trailing: Text(ChatTime.getTimes(chat.messages.time)),
+                          onTap: () {
+                            NavigationService().navigateToRoute('/chat',
+                                arguments: chat.otherUser);
+                          },
+                        );
                       },
                     ),
         ),

@@ -1,6 +1,5 @@
 import 'package:blood_management_app/providers/chat_stream_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 //pages
@@ -22,7 +21,6 @@ class ChatMessages extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final _firestore = FirebaseFirestore.instance;
     final DatabaseService _databaseService = DatabaseService();
     final AuthService _authService = AuthService();
     final chatId =
@@ -39,6 +37,7 @@ class ChatMessages extends ConsumerWidget {
         return ChatBubble(
           message: message.message,
           isMe: isMe,
+          time: message.time,
         );
       },
     );
