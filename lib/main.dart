@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:logger/logger.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 //pages
 import './widgets/signup.dart';
@@ -28,10 +27,9 @@ void main() async {
     SplashPage(
       key: UniqueKey(),
       onInitializationComplete: () {
-        final Logger _logger = Logger();
         FirebaseMessaging.onBackgroundMessage(
             _firebaseMessageingBackgroundHandler);
-        _logger.i('Firebase Messaging Background Handler initialized');
+        Logger().i('Firebase Messaging Background Handler initialized');
 
         runApp(
           const ProviderScope(
@@ -44,7 +42,7 @@ void main() async {
 }
 
 Future<void> _firebaseMessageingBackgroundHandler(RemoteMessage message) async {
-  print('Handling a backgrond message: ${message.messageId}');
+  Logger().i('Handling a backgrond message: ${message.messageId}');
 }
 
 class MyApp extends StatelessWidget {
@@ -105,7 +103,6 @@ class MyApp extends StatelessWidget {
             return const NewMessageScreen();
           }
         },
-        // home: const AuthStateListener(),
       ),
     );
   }

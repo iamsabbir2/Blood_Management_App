@@ -21,6 +21,7 @@ import '../models/data_state.dart';
 //widgets
 import '../widgets/custom_elevated_button.dart';
 import '../widgets/custom_text_button.dart';
+import '../background/main_screen_background.dart';
 //services
 import '../services/navigation_service.dart';
 import '../services/auth_service.dart';
@@ -64,9 +65,6 @@ class _BmaScreenState extends ConsumerState<BmaScreen> {
           : token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
         Logger().i('Token: $token');
-        final authService = AuthService();
-        final databaseService = DatabaseService();
-        final currentUserState = ref.watch(currentUserProvider);
 
         // Use the services as needed
         if (FirebaseAuth.instance.currentUser != null) {
@@ -111,7 +109,7 @@ class _BmaScreenState extends ConsumerState<BmaScreen> {
     NavigationService().navigateToPage(const RequestLists());
   }
 
-  void _donate(PatientModel request) {
+  void _donate(PatientModel request) async {
     setState(() {
       _isGoingToDonate = true;
     });
@@ -138,21 +136,14 @@ class _BmaScreenState extends ConsumerState<BmaScreen> {
         time: Timestamp.now().toDate().toIso8601String(),
       );
       ref.read(chatStreamProvider.notifier).addMessage(chatId, message);
-      ref
-          .read(currentUserProvider.notifier)
-          .fetchCurrentUser(request.currentUserUid);
-      final otherUserState = ref.watch(currentUserProvider);
-      NavigationService().navigateToRoute(
-        '/chat',
-        arguments: otherUserState.data,
-      );
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(' Thanks for Donation confirming!'),
         ),
       );
     } catch (e) {
-      print(e);
+      Logger().i(e);
     }
     setState(() {
       _isGoingToDonate = false;
@@ -188,7 +179,7 @@ class _BmaScreenState extends ConsumerState<BmaScreen> {
             width: double.infinity,
             child: CustomPaint(
               size: const Size(double.infinity, 400),
-              painter: MyCustomPainter(),
+              painter: HomeBackground(),
             ),
           ),
           Padding(
@@ -436,9 +427,20 @@ class _BmaScreenState extends ConsumerState<BmaScreen> {
                                     Expanded(
                                       child: CustomElevatedButton(
                                         isLoading: _isGoingToDonate,
-                                        onPressed: () {
+                                        onPressed: () async {
                                           _donate(request);
                                           NavigationService().goBack();
+
+                                          final userSnapshot =
+                                              await _databaseService.getUser(
+                                                  request.currentUserUid);
+                                          final otherUser = UserModel.fromMap(
+                                              userSnapshot.data()
+                                                  as Map<String, dynamic>);
+                                          NavigationService().navigateToRoute(
+                                            '/chat',
+                                            arguments: otherUser,
+                                          );
                                         },
                                         title: 'Yes',
                                         width: 20,
@@ -558,32 +560,5 @@ class _BmaScreenState extends ConsumerState<BmaScreen> {
         ),
       ],
     );
-  }
-}
-
-class MyCustomPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color.fromRGBO(255, 23, 23, 1.0)
-      ..style = PaintingStyle.fill;
-
-    final path = Path()
-      ..moveTo(0, 0)
-      ..arcTo(
-        Rect.fromCircle(
-            center: Offset(size.width / 2, 0), radius: size.width / 2),
-        0,
-        3.14,
-        false,
-      )
-      ..close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
   }
 }

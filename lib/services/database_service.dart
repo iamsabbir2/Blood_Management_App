@@ -181,6 +181,9 @@ class DatabaseService {
       await messageRef.update({
         'messageId': messageId,
       });
+      await messageRef.update({
+        'isSent': true,
+      });
     } catch (e) {
       print('problem in addMessage');
       print(e);
@@ -378,5 +381,14 @@ class DatabaseService {
         .get();
   }
 
-  DatabaseService() {}
+  Future<void> updateMessageStatus(String chatId, String messageId) async {
+    await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      'isSent': true,
+    });
+  }
 }
