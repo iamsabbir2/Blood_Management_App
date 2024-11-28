@@ -14,6 +14,9 @@ import './screens/request_lists.dart';
 import './widgets/request.dart';
 import './screens/chat_screen.dart';
 import './screens/new_message_screen.dart';
+import './screens/responses_screen.dart';
+import './screens/donations_screen.dart';
+import './screens/my_requests.dart';
 
 //widgets
 import 'widgets/auth_state_listener.dart';
@@ -101,7 +104,16 @@ class MyApp extends StatelessWidget {
           },
           '/new_message_screen': (ctx) {
             return const NewMessageScreen();
-          }
+          },
+          '/response': (ctx) {
+            return const ResponsesScreen();
+          },
+          '/donations': (ctx) {
+            return const DonationsScreen();
+          },
+          '/show_request': (ctx) {
+            return const MyRequests();
+          },
         },
       ),
     );

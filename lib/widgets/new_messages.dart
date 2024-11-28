@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 
 //models
 import '../models/user_model.dart';
@@ -68,6 +70,32 @@ class _NewMessageState extends ConsumerState<NewMessage> {
       _isSending = false;
     });
   }
+
+  // Future<void> sendNotification(String recieverId, String message) async {
+  //   DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+  //       .collection('users')
+  //       .doc(recieverId)
+  //       .get();
+
+  //   String? fcmToken = documentSnapshot['fcmToken'];
+  //   if (fcmToken == null) {
+  //     print('Unable to send FCM message, no token exists.');
+  //     return;
+  //   }
+
+  //   try {
+  //     await http.post(
+  //       Uri.parse('https://api.rnfirebase.io/messaging/send'),
+  //       headers: <String, String>{
+  //         'Content-Type': 'application/json; charset=UTF-8',
+  //       },
+  //       body: constructFCMPayload(_token),
+  //     );
+  //     print('FCM request for device sent!');
+  //   } catch (e) {
+  //     print(e);
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

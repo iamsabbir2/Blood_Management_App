@@ -25,7 +25,7 @@ class ChatMessages extends ConsumerWidget {
     final AuthService _authService = AuthService();
     final chatId =
         _databaseService.getChatId(_authService.currentUser!.uid, user.uid);
-
+    ref.read(chatStreamProvider.notifier).updateMessageStatus(chatId);
     ref.read(chatStreamProvider.notifier).fetchMessages(chatId);
     final chatStream = ref.watch(chatStreamProvider);
     return ListView.builder(

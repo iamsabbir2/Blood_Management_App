@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:logger/logger.dart';
 
 //models
 import '../models/user_model.dart';
@@ -47,9 +49,10 @@ class DatabaseService {
       QuerySnapshot snapshot =
           await _firestore.collection('blood_requests').get();
 
-      return snapshot.docs.map((doc) {
-        print('successfully fetched');
-
+      return snapshot.docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return data['isRequestComplete'] == false;
+      }).map((doc) {
         return PatientModel.fromMap(doc.data() as Map<String, dynamic>);
       }).toList();
     } catch (e) {
@@ -114,6 +117,14 @@ class DatabaseService {
     } catch (e) {
       print('problem in updateBloodRequest');
       print(e);
+    }
+  }
+
+  Future<void> cancelBloodRequest(String requestId) async {
+    try {
+      await _firestore.collection('blood_requests').doc(requestId).delete();
+    } catch (e) {
+      Logger().i('Error in cancelBloodRequest : $e');
     }
   }
 
@@ -312,7 +323,7 @@ class DatabaseService {
           ),
         );
         chats.sort((a, b) {
-          return b.messages!.time.compareTo(a.messages!.time);
+          return b.messages.time.compareTo(a.messages.time);
         });
       }
       return chats.toList();
@@ -381,14 +392,20 @@ class DatabaseService {
         .get();
   }
 
-  Future<void> updateMessageStatus(String chatId, String messageId) async {
+  Future<void> updateMessageStatus(String chatId) async {
     await _firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .doc(messageId)
-        .update({
-      'isSent': true,
+        .where('receiverUid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+        .get()
+        .then((message) {
+      final messages = message.docs;
+      for (var message in messages) {
+        message.reference.update({
+          'isRead': true,
+        });
+      }
     });
   }
 }

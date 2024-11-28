@@ -7,8 +7,7 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-const {onRequest} = require("firebase-functions/v2/https");
-const logger = require("firebase-functions/logger");
+// const { onRequest} = require("firebase-functions/v2/https");
 
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
@@ -17,3 +16,32 @@ const logger = require("firebase-functions/logger");
 //   logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");
 // });
+
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+admin.initializeApp();
+exports.exampleFunction = functions.https.onRequest((request, response) => {
+  response.send("Hello from Firebase!");
+});
+// const messaging = admin.messaging();
+
+
+// exports.sendBloodRequestNotification = async (req, res) => {
+//     const { tokens, title, body } = req.body;
+
+//     const message = {
+//         notification: {
+//             title: title,
+//             body: body,
+//         },
+//         tokens: tokens,
+//     };
+
+//     try {
+//         const response = await messaging.sendEachForMulticast(message);
+//         res.status(200).send(`${response.successCount} messages sent.`);
+//     } catch (error) {
+//         console.error("Error sending messages:", error);
+//         res.status(500).send("Failed to send messages.");
+//     }
+// }

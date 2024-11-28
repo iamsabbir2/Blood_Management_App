@@ -59,6 +59,15 @@ class PatientNotifier extends StateNotifier<DataState<List<PatientModel>>> {
       state = DataState.error(e.toString());
     }
   }
+
+  void cancelBloodRequest(String requestId) async {
+    try {
+      await _databaseService.cancelBloodRequest(requestId);
+      fetchBloodRequests();
+    } catch (e) {
+      state = DataState.error(e.toString());
+    }
+  }
 }
 
 final patientProvider =

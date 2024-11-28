@@ -6,13 +6,13 @@ class Request extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Request Description',
         ),
       ),
-      body: Center(
+      body: const Center(
         child: Card(
-          child: Container(
+          child: SizedBox(
             height: 100,
             child: Text(
               'Here details would be shown',

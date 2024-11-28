@@ -21,8 +21,16 @@ class CustomElevatedButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size(width ?? double.infinity, height ?? 50),
+        backgroundColor: const Color.fromARGB(255, 234, 1, 1),
+        elevation: 5,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(5),
+        ),
+      ),
       child: isLoading
-          ? SizedBox(
+          ? const SizedBox(
               width: 24,
               height: 24,
               child: CircularProgressIndicator(
@@ -38,14 +46,6 @@ class CustomElevatedButton extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-      style: ElevatedButton.styleFrom(
-        minimumSize: Size(width ?? double.infinity, height ?? 50),
-        backgroundColor: const Color.fromARGB(255, 234, 1, 1),
-        elevation: 5,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(5),
-        ),
-      ),
     );
   }
 }

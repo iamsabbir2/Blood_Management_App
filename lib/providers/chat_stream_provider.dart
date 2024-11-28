@@ -1,4 +1,5 @@
 //packages
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 //models
@@ -19,6 +20,10 @@ class ChatStreamNotifier extends StateNotifier<List<MessageModel>> {
   void addMessage(String chatId, MessageModel message) async {
     await _databaseService.addMessage(chatId, message);
     fetchMessages(chatId);
+  }
+
+  void updateMessageStatus(String chatId) async {
+    await _databaseService.updateMessageStatus(chatId);
   }
 }
 

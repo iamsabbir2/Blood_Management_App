@@ -318,6 +318,7 @@ class _LoginState extends ConsumerState<Login> {
           'Don\'t have an account?',
         ),
         CustomTextButton(
+          isLoading: false,
           onPressed: () {
             NavigationService().navigateToRoute('/signup');
           },

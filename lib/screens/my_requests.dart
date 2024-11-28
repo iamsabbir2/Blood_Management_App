@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import '../screens/show_request.dart';
 
@@ -18,7 +20,7 @@ class MyRequests extends ConsumerStatefulWidget {
 }
 
 class _MyRequestsState extends ConsumerState<MyRequests> {
-  final auth = AuthService();
+  final AuthService auth = AuthService();
   void _showRequest() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -44,13 +46,14 @@ class _MyRequestsState extends ConsumerState<MyRequests> {
       );
     } else {
       return ListView.builder(
-          itemCount: myRequests.length,
-          itemBuilder: (context, index) {
-            return ListTile(
-              title: Text(myRequests[index].name),
-              subtitle: Text(myRequests[index].bloodGroup),
-            );
-          });
+        itemCount: myRequests.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            title: Text(myRequests[index].name),
+            subtitle: Text(myRequests[index].bloodGroup),
+          );
+        },
+      );
     }
   }
 }

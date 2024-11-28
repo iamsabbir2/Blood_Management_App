@@ -8,8 +8,8 @@ class UserModel {
   final bool isContactHidden;
   final String bloodGroup;
   final bool isDonor;
-  final int totalDonations;
-  final int totalRequests;
+  int totalDonations;
+  int totalRequests;
   DateTime? lastDonationDate;
   final bool canDonate;
   bool isGoingToDonate;
@@ -39,6 +39,18 @@ class UserModel {
     required this.isTyping,
     this.fcmToken,
   });
+
+  void updateLastActiveTime() {
+    lastActive = DateTime.now();
+  }
+
+  void updateIsOnline(bool value) {
+    isOnline = value;
+  }
+
+  void incrementDonation() {
+    totalDonations = totalDonations + 1;
+  }
 
   Map<String, dynamic> toMap() {
     return {
