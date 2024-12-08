@@ -25,17 +25,17 @@ class NewMessageScreen extends ConsumerStatefulWidget {
 class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
   late DataState<List<UserModel>> donors;
   late List<UserModel> chatUsers;
-
+  late DatabaseService _databaseService;
+  late AuthService _authService;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  late DatabaseService _databaseService;
-  late AuthService _authService;
   @override
   Widget build(BuildContext context) {
     donors = ref.watch(userProvider);
@@ -60,13 +60,11 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
               child: Text('An error occured'),
             );
           }
-          print(snapshot.data!.docs);
           final users = snapshot.data!.docs;
           final filteredUser = users.where((user) {
-            print(user['uid']);
-            print(AuthService().currentUser!.uid);
             return user['uid'] != AuthService().currentUser!.uid &&
-                user['isDonor'] == true;
+                user['isDonor'] == true &&
+                user['name'].toLowerCase().contains(_searchQuery.toLowerCase());
           }).toList();
 
           return Column(
@@ -82,31 +80,36 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  onChanged: (value) {
+                  onEditingComplete: () {
                     setState(() {
-                      _searchQuery = value;
+                      _searchQuery = _searchController.text;
                     });
+                    FocusScope.of(context).unfocus();
                   },
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  itemCount: filteredUser.length,
-                  itemBuilder: (context, index) {
-                    final user = filteredUser[index];
-                    return ListTile(
-                      title: Text(user['name']),
-                      subtitle: Text(user['bloodGroup']),
-                      onTap: () {
-                        // Handle user tap
-                        NavigationService().navigateToRoute(
-                          '/chat',
-                          arguments: UserModel.fromMap(user.data()),
-                        );
-                      },
-                    );
-                  },
-                ),
+                child: filteredUser.isEmpty
+                    ? const Center(
+                        child: Text('No user found!'),
+                      )
+                    : ListView.builder(
+                        itemCount: filteredUser.length,
+                        itemBuilder: (context, index) {
+                          final user = filteredUser[index];
+                          return ListTile(
+                            title: Text(user['name']),
+                            subtitle: Text(user['bloodGroup']),
+                            onTap: () {
+                              // Handle user tap
+                              NavigationService().navigateToRoute(
+                                '/chat',
+                                arguments: UserModel.fromMap(user.data()),
+                              );
+                            },
+                          );
+                        },
+                      ),
               ),
             ],
           );

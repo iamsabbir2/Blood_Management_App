@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:logger/logger.dart';
 
 import '../utility_functions/message_time.dart';
 
@@ -18,18 +17,15 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: message,
-        style: const TextStyle(color: Colors.black),
-      ),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: MediaQuery.of(context).size.width * 0.8);
+    // final textPainter = TextPainter(
+    //   text: TextSpan(
+    //     text: message,
+    //     style: const TextStyle(color: Colors.black),
+    //   ),
+    //   maxLines: 1,
+    //   textDirection: TextDirection.ltr,
+    // )..layout(maxWidth: MediaQuery.of(context).size.width * 0.8);
 
-    final textWidth = textPainter.width;
-    final textwidth = textPainter.size.width;
-    final width = MediaQuery.of(context).size.width * 0.8;
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(

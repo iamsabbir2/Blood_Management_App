@@ -1,8 +1,8 @@
+import 'package:blood_management_app/services/push_notification_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 //models
 import '../models/user_model.dart';
@@ -31,11 +31,14 @@ class NewMessage extends ConsumerStatefulWidget {
 class _NewMessageState extends ConsumerState<NewMessage> {
   late AuthService _authService;
   late DatabaseService _databaseService;
+  final PushNotificationService _pushNotificationService =
+      PushNotificationService();
 
   final TextEditingController _messageController = TextEditingController();
   bool _isSending = false;
   late String chatId;
   Future<void> sendNotification(String recieverId, String message) async {
+    //ignore: unused_local_variable
     DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(recieverId)
@@ -63,7 +66,7 @@ class _NewMessageState extends ConsumerState<NewMessage> {
     ref.read(chatStreamProvider.notifier).addMessage(chatId, message);
     //sent message successfully
     //update sent message
-
+    await _notifyUser();
     _messageController.clear();
 
     setState(() {
@@ -71,31 +74,26 @@ class _NewMessageState extends ConsumerState<NewMessage> {
     });
   }
 
-  // Future<void> sendNotification(String recieverId, String message) async {
-  //   DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-  //       .collection('users')
-  //       .doc(recieverId)
-  //       .get();
-
-  //   String? fcmToken = documentSnapshot['fcmToken'];
-  //   if (fcmToken == null) {
-  //     print('Unable to send FCM message, no token exists.');
-  //     return;
-  //   }
-
-  //   try {
-  //     await http.post(
-  //       Uri.parse('https://api.rnfirebase.io/messaging/send'),
-  //       headers: <String, String>{
-  //         'Content-Type': 'application/json; charset=UTF-8',
-  //       },
-  //       body: constructFCMPayload(_token),
-  //     );
-  //     print('FCM request for device sent!');
-  //   } catch (e) {
-  //     print(e);
-  //   }
-  // }
+  Future<void> _notifyUser() async {
+    String token = widget.user.fcmToken ?? '';
+    Logger().i(token);
+    try {
+      if (token.isNotEmpty) {
+        final Map<String, dynamic> message = {
+          'message': {
+            'token': token,
+            'notification': {
+              'title': 'Chat Message',
+              'body': 'You have a new message from ',
+            },
+          }
+        };
+        await _pushNotificationService.sendPushMessage(message);
+      }
+    } catch (e) {
+      Logger().e(e);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

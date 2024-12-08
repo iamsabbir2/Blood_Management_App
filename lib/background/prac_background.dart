@@ -9,7 +9,7 @@ class PracBackground extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     var paint = Paint()
       //..color = colorScheme
-      ..color = Color.fromRGBO(255, 23, 23, 1.0)
+      ..color = const Color.fromRGBO(255, 23, 23, 1.0)
       ..strokeWidth = 5
       ..style = PaintingStyle.fill;
 

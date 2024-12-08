@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 //models
 import '../models/message_model.dart';
 import '../models/data_state.dart';
-import '../models/chat_model.dart';
 
 //services
 import '../services/database_service.dart';

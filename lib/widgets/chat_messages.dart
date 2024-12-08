@@ -21,19 +21,20 @@ class ChatMessages extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final DatabaseService _databaseService = DatabaseService();
-    final AuthService _authService = AuthService();
+    final DatabaseService databaseService = DatabaseService();
+    final AuthService authService = AuthService();
     final chatId =
-        _databaseService.getChatId(_authService.currentUser!.uid, user.uid);
+        databaseService.getChatId(authService.currentUser!.uid, user.uid);
     ref.read(chatStreamProvider.notifier).updateMessageStatus(chatId);
     ref.read(chatStreamProvider.notifier).fetchMessages(chatId);
     final chatStream = ref.watch(chatStreamProvider);
+
     return ListView.builder(
       reverse: true,
       itemCount: chatStream.length,
       itemBuilder: (ctx, index) {
         final message = chatStream[index];
-        final isMe = message.senderUid == _authService.currentUser!.uid;
+        final isMe = message.senderUid == authService.currentUser!.uid;
         return ChatBubble(
           message: message.message,
           isMe: isMe,

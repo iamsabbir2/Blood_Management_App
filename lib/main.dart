@@ -1,4 +1,5 @@
 //packages
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,9 +7,13 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:logger/logger.dart';
 
 //pages
-import './widgets/signup.dart';
+import 'authentication/email_verification.dart';
+import 'screens/info.dart';
+import 'screens/profile.dart';
+import 'screens/show_request.dart';
+import 'screens/signup.dart';
 import './splashes/splash_page.dart';
-import './widgets/login.dart';
+import './screens/login.dart';
 //screeens
 import './screens/request_lists.dart';
 import './widgets/request.dart';
@@ -20,7 +25,7 @@ import './screens/my_requests.dart';
 
 //widgets
 import 'widgets/auth_state_listener.dart';
-import 'widgets/donors.dart';
+import 'screens/donors.dart';
 
 //services
 import './services/navigation_service.dart';
@@ -33,7 +38,6 @@ void main() async {
         FirebaseMessaging.onBackgroundMessage(
             _firebaseMessageingBackgroundHandler);
         Logger().i('Firebase Messaging Background Handler initialized');
-
         runApp(
           const ProviderScope(
             child: MyApp(),
@@ -111,9 +115,22 @@ class MyApp extends StatelessWidget {
           '/donations': (ctx) {
             return const DonationsScreen();
           },
-          '/show_request': (ctx) {
-            return const MyRequests();
+          // '/show_request': (ctx) {
+          //   return const MyRequests();
+          // },
+
+          '/email-verification': (ctx) {
+            return const EmailVerificationPage();
           },
+          '/show_request': (ctx) {
+            return const ShowRequest();
+          },
+          '/profile': (ctx) {
+            return const Profile();
+          },
+          '/info': (ctx) {
+            return const InfoScreen();
+          }
         },
       ),
     );

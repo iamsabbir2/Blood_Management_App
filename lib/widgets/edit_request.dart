@@ -1,5 +1,7 @@
+import 'package:blood_management_app/widgets/custom_text_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 
 //widgets
 import '../widgets/custom_text_form_field.dart';
@@ -164,8 +166,7 @@ class _EditRequestState extends ConsumerState<EditRequest> {
                         );
                       }
                     } catch (e) {
-                      print('problem in _request');
-                      print(e);
+                      Logger().e('Problem in updating request: $e');
                     }
                     setState(() {
                       _isLoading = false;
@@ -199,7 +200,7 @@ class _EditRequestState extends ConsumerState<EditRequest> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Blood Request'),
+        title: const Text('Edit Request'),
       ),
       resizeToAvoidBottomInset: true,
       body: Padding(
@@ -272,7 +273,7 @@ class _EditRequestState extends ConsumerState<EditRequest> {
       child: Column(
         children: [
           const Text(
-            'Make A Request',
+            'Update Request',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -431,7 +432,55 @@ class _EditRequestState extends ConsumerState<EditRequest> {
               horizontal: 4.0,
               vertical: 8,
             ),
-            child: _requestButton(),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _requestButton(),
+                ),
+                Expanded(
+                  child: CustomTextButton(
+                    onPressed: () {
+                      showDialog(
+                          context: context,
+                          builder: (ctx) {
+                            return AlertDialog(
+                              title: const Text('Warning!'),
+                              content:
+                                  const Text('Are you sure to delete request?'),
+                              actions: [
+                                CustomElevatedButton(
+                                  isLoading: false,
+                                  onPressed: () {
+                                    NavigationService().goBack();
+                                  },
+                                  title: 'No',
+                                  width: 50,
+                                  height: 32,
+                                ),
+                                CustomTextButton(
+                                  onPressed: () {
+                                    NavigationService().goBack();
+                                    ref
+                                        .read(patientProvider.notifier)
+                                        .deleteBloodRequest(_requestId);
+                                    ref
+                                        .read(patientProvider.notifier)
+                                        .fetchBloodRequests();
+                                    NavigationService().goBack();
+                                  },
+                                  title: 'Yes',
+                                  isLoading: false,
+                                ),
+                              ],
+                            );
+                          });
+                    },
+                    title: 'Delete Request',
+                    isLoading: false,
+                  ),
+                )
+              ],
+            ),
           ),
         ],
       ),
@@ -444,7 +493,7 @@ class _EditRequestState extends ConsumerState<EditRequest> {
       onPressed: () {
         _request();
       },
-      title: 'Request',
+      title: 'Update',
     );
   }
 

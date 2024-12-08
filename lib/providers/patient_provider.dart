@@ -8,8 +8,8 @@ import '../services/database_service.dart';
 import '../models/data_state.dart';
 
 class PatientNotifier extends StateNotifier<DataState<List<PatientModel>>> {
-  DatabaseService _databaseService = DatabaseService();
-  PatientNotifier(this._databaseService) : super(DataState.loading()) {
+  final DatabaseService _databaseService = DatabaseService();
+  PatientNotifier() : super(DataState.loading()) {
     fetchBloodRequests();
   }
 
@@ -68,10 +68,19 @@ class PatientNotifier extends StateNotifier<DataState<List<PatientModel>>> {
       state = DataState.error(e.toString());
     }
   }
+
+  Future<void> deleteBloodRequest(String requestId) async {
+    try {
+      await _databaseService.deleteRequest(requestId);
+      fetchBloodRequests();
+    } catch (e) {
+      state = DataState.error(e.toString());
+    }
+  }
 }
 
 final patientProvider =
     StateNotifierProvider<PatientNotifier, DataState<List<PatientModel>>>(
         (ref) {
-  return PatientNotifier(DatabaseService());
+  return PatientNotifier();
 });

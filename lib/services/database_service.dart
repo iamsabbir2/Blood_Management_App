@@ -20,8 +20,7 @@ class DatabaseService {
     try {
       await _firestore.collection('users').doc(user.uid).set(user.toMap());
     } catch (e) {
-      print('problem in addUser');
-      print(e);
+      Logger().i('Error in addUser : $e');
     }
   }
 
@@ -32,9 +31,68 @@ class DatabaseService {
         return UserModel.fromMap(doc.data() as Map<String, dynamic>);
       }).toList();
     } catch (e) {
-      print('problem in fetching users');
-      print(e);
+      Logger().i('Error in fetchUsers : $e');
       return [];
+    }
+  }
+
+  Future<void> updateUserName(String uid, String name) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'name': name,
+      });
+    } catch (e) {
+      Logger().i('Error in updateUserName : $e');
+    }
+  }
+
+  Future<void> updateResponseStatus(String responseId) async {
+    try {
+      await _firestore.collection('request_response').doc(responseId).update({
+        'responseStatus': true,
+      });
+    } catch (e) {
+      Logger().i('Error in updateResponseStatus : $e');
+    }
+  }
+
+  Future<void> updateDonationCount(String uid) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'totalDonations': FieldValue.increment(1),
+      });
+    } catch (e) {
+      Logger().i('Error in updateDonationCount : $e');
+    }
+  }
+
+  Future<void> updateUserPhoneNumber(String uid, String phoneNumber) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'phoneNumber': phoneNumber,
+      });
+    } catch (e) {
+      Logger().i('Error in updateUserPhoneNumber : $e');
+    }
+  }
+
+  Future<void> updateContactStatus(String uid, bool value) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'isContactHidden': value,
+      });
+    } catch (e) {
+      Logger().i('Error in updateContactStatus : $e');
+    }
+  }
+
+  Future<void> updateLastDonationTime(String uid, DateTime? time) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'lastDonationDate': time,
+      });
+    } catch (e) {
+      Logger().i('Error in updateLastDonationTime : $e');
     }
   }
 
@@ -44,6 +102,16 @@ class DatabaseService {
     return UserModel.fromMap(snapshot.data() as Map<String, dynamic>);
   }
 
+  Future<void> deleteRequest(String requestId) async {
+    try {
+      await _firestore.collection('blood_requests').doc(requestId).update({
+        'isRequestDelete': true,
+      });
+    } catch (e) {
+      Logger().i('Error in deleteRequest : $e');
+    }
+  }
+
   Future<List<PatientModel>> fetchBloodRequests() async {
     try {
       QuerySnapshot snapshot =
@@ -51,13 +119,13 @@ class DatabaseService {
 
       return snapshot.docs.where((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        return data['isRequestComplete'] == false;
+        return data['isRequestComplete'] == false ||
+            data['isRequestDelete'] == false;
       }).map((doc) {
         return PatientModel.fromMap(doc.data() as Map<String, dynamic>);
       }).toList();
     } catch (e) {
-      print('problem in fetchBloodRequests');
-      print(e);
+      Logger().i('Error in fetchBloodRequests : $e');
       return [];
     }
   }
@@ -65,34 +133,17 @@ class DatabaseService {
   Future<void> addBloodRequest(PatientModel patient) async {
     try {
       DocumentReference docRef =
-          await _firestore.collection('blood_requests').add({
-        'currentUserUid': patient.currentUserUid,
-        'name': patient.name,
-        'bloodGroup': patient.bloodGroup,
-        'units': patient.units,
-        'transfusionDate': patient.transfusionDate,
-        'transfusionTime': patient.transfusionTime,
-        'hospital': patient.hospital,
-        'contact': patient.contact,
-        'address': patient.address,
-        'description': patient.description,
-        'age': patient.age,
-        'haemoglobin': patient.haemoglobin,
-        'isRequestComplete': patient.isRequestComplete,
-      });
+          await _firestore.collection('blood_requests').add(patient.toMap());
 
       String requestId = docRef.id;
       await docRef.update({'requestId': requestId});
     } catch (e) {
-      print('problem in addBloodRequest');
-      print(e);
+      Logger().i('Error in addBloodRequest : $e');
     }
   }
 
   Future<void> updateBloodRequest(PatientModel patient) async {
     try {
-      print('its triggered');
-      print(patient.requestId);
       if (patient.requestId.isEmpty) {
         throw Exception('Invalid requestId');
       }
@@ -115,8 +166,7 @@ class DatabaseService {
         'isRequestComplete': patient.isRequestComplete,
       });
     } catch (e) {
-      print('problem in updateBloodRequest');
-      print(e);
+      Logger().i('Error in updateBloodRequest : $e');
     }
   }
 
@@ -134,8 +184,7 @@ class DatabaseService {
         'isGoingToDonate': isGoingToDonate,
       });
     } catch (e) {
-      print('problem in updateIsGoingToDonate');
-      print(e);
+      Logger().i('Error in updateIsGoingToDonate : $e');
     }
   }
 
@@ -145,8 +194,7 @@ class DatabaseService {
         'units': units,
       });
     } catch (e) {
-      print('problem in updateNeedBloodUnits');
-      print(e);
+      Logger().i('Error in updateNeedBloodUnits : $e');
     }
   }
 
@@ -157,8 +205,7 @@ class DatabaseService {
         'isRequestComplete': isRequestComplete,
       });
     } catch (e) {
-      print('problem in updateIsCompleteRequest');
-      print(e);
+      Logger().i('Error in updateIsCompleteRequest : $e');
     }
   }
 
@@ -186,9 +233,6 @@ class DatabaseService {
       DocumentReference messageRef =
           await docRef.collection('messages').add(message.toMap());
       String messageId = messageRef.id;
-
-      print('messageId: $messageId');
-
       await messageRef.update({
         'messageId': messageId,
       });
@@ -196,8 +240,7 @@ class DatabaseService {
         'isSent': true,
       });
     } catch (e) {
-      print('problem in addMessage');
-      print(e);
+      Logger().i('Error in addMessage : $e');
     }
   }
 
@@ -212,7 +255,6 @@ class DatabaseService {
         UserModel otherUser;
         Map<String, dynamic> data = doc.data();
         List<String> participants = data['particpants'].cast<String>();
-        final lastMessage = data['lastMessage'];
         final otherUserUid = participants[0] == currentUserId
             ? participants[1]
             : participants[0];
@@ -242,46 +284,6 @@ class DatabaseService {
       }
       return chats;
     });
-    // final QuerySnapshot snapshot = await
-    //     .where('particpants', arrayContains: currentUserId)
-    //     .get();
-
-    // List<ChatModel> chats = [];
-
-    // for (var doc in snapshot.docs) {
-    //   UserModel otherUser;
-    //   Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    //   List<String> participants = data['particpants'].cast<String>();
-    //   final lastMessage = data['lastMessage'];
-    //   final otherUserUid =
-    //       participants[0] == currentUserId ? participants[1] : participants[0];
-
-    //   final userSnapshot = await getUser(otherUserUid);
-
-    //   otherUser =
-    //       UserModel.fromMap(userSnapshot.data() as Map<String, dynamic>);
-
-    //   final messageSnapshot = await _firestore
-    //       .collection('chats')
-    //       .doc(doc.id)
-    //       .collection('messages')
-    //       .orderBy('time', descending: true)
-    //       .limit(1)
-    //       .get();
-
-    //   final message = messageSnapshot.docs.first.data();
-
-    //   chats.add(
-    //     ChatModel(
-    //       uid: doc.id,
-    //       otherUser: otherUser,
-    //       messages: MessageModel.fromJson(message),
-    //       lastMessage: lastMessage,
-    //     ),
-    //   );
-    // }
-
-    // return chats;
   }
 
   Future<List<ChatModel>> fetchChats(String uid) async {
@@ -297,7 +299,6 @@ class DatabaseService {
         UserModel otherUser;
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
         List<String> participants = data['particpants'].cast<String>();
-        final lastMessage = data['lastMessage'];
         final otherUserUid =
             participants[0] == uid ? participants[1] : participants[0];
 
@@ -328,8 +329,7 @@ class DatabaseService {
       }
       return chats.toList();
     } catch (e) {
-      print('problem in fetchChats');
-      print(e);
+      Logger().i('Error in fetchChats : $e');
       return [];
     }
   }
@@ -346,8 +346,7 @@ class DatabaseService {
         return MessageModel.fromJson(doc.data() as Map<String, dynamic>);
       }).toList();
     } catch (e) {
-      print('problem in fetchMessages');
-      print(e);
+      Logger().i('Error in fetchMessage : $e');
       return [];
     }
   }
@@ -363,13 +362,72 @@ class DatabaseService {
 
   Future<void> updateLastMessage(String chatId, MessageModel message) async {
     try {} catch (e) {
-      print('problem in updateLastMessage');
-      print(e);
+      Logger().i('Error in updateLastMessage : $e');
+    }
+  }
+
+  Future<bool> isDonor(String uid) async {
+    try {
+      DocumentSnapshot snapshot = await _firestore
+          .collection('users')
+          .doc(uid)
+          .get(const GetOptions(source: Source.serverAndCache));
+      if (snapshot.exists) {
+        return snapshot.get(FieldPath(const ['isDonor']));
+      } else {
+        return false;
+      }
+    } catch (e) {
+      Logger().i('Error in isDonor : $e');
+      return false;
     }
   }
 
   Future<DocumentSnapshot> getUser(String uid) async {
-    return await _firestore.collection('users').doc(uid).get();
+    try {
+      return await _firestore.collection('users').doc(uid).get();
+    } catch (e) {
+      Logger().i('Error in getUser : $e');
+      return null as DocumentSnapshot;
+    }
+  }
+
+  Future<void> updateRequestCount(String uid) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'totalRequests': FieldValue.increment(1),
+      });
+    } catch (e) {
+      Logger().i('Error in updateRequestCount : $e');
+    }
+  }
+
+  Future<void> updateTotalDonations(String uid) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'totalDonations': FieldValue.increment(1),
+      });
+    } catch (e) {
+      Logger().i('Error in updateTotalDonations : $e');
+    }
+  }
+
+  Future<bool> getDonors(String bloodGroup) async {
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection('users')
+          .where('isDonor', isEqualTo: true)
+          .where('bloodGroup', isEqualTo: bloodGroup)
+          .get();
+      return snapshot.docs.isNotEmpty;
+    } catch (e) {
+      Logger().i('Error in getDonors : $e');
+      return false;
+    }
+  }
+
+  Future<void> deleteUser(String uid) async {
+    await _firestore.collection('users').doc(uid).delete();
   }
 
   Stream<QuerySnapshot> getMessagesForUser(String uid) {

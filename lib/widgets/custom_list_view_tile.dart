@@ -27,7 +27,7 @@ class CustomListViewTile extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 30,
               backgroundColor: Colors.red,
               backgroundImage: NetworkImage(
@@ -46,7 +46,7 @@ class CustomListViewTile extends StatelessWidget {
       minVerticalPadding: height * 0.20,
       title: Text(title),
       subtitle: isActivity
-          ? Row(
+          ? const Row(
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -60,7 +60,7 @@ class CustomListViewTile extends StatelessWidget {
                 ),
               ],
             )
-          : Text(subtitle, style: TextStyle()),
+          : Text(subtitle, style: const TextStyle()),
       onTap: onTap,
     );
   }

@@ -16,10 +16,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:logger/logger.dart';
 //pages
+import '../authentication/email_verification.dart';
 import '../screens/request_lists.dart';
 //models
 import '../models/user_model.dart';
 import '../models/data_state.dart';
+import '../models/request_response.dart';
 //widgets
 import '../widgets/custom_elevated_button.dart';
 import '../widgets/custom_text_button.dart';
@@ -27,6 +29,7 @@ import '../background/main_screen_background.dart';
 //services
 import '../services/navigation_service.dart';
 import '../services/auth_service.dart';
+import '../services/push_notification_service.dart';
 //providers
 import '../providers/user_provider.dart';
 import '../providers/current_user_provider.dart';
@@ -43,71 +46,56 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final PageController _pageController = PageController();
   late DataState<List<PatientModel>> requestState;
-  late List<PatientModel> requests;
+  late List<PatientModel> myRequests;
+  List<PatientModel> requests = [];
   late AuthService _authService;
   late DataState<UserModel> currentUserState;
-  late bool _isGoingToDonate;
+  bool _isGoingToDonate = false;
   late DatabaseService _databaseService;
+
   // ignore: prefer_final_fields
   bool _isCancellingRequest = false;
-  Future<void> _requestNotificationPermissions() async {
-    await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      announcement: true,
-      badge: true,
-      sound: true,
-    );
+  RequestResponse requestResponse = RequestResponse();
+  PushNotificationService _pushNotificationService = PushNotificationService();
+
+  Future<void> sendResponse(PatientModel reqeust) async {
+    requestResponse.responseId = '';
+    requestResponse.donorId = currentUserState.data!.uid;
+    requestResponse.donorName = currentUserState.data!.name;
+    requestResponse.patientName = reqeust.name;
+    requestResponse.recipientId = reqeust.currentUserUid;
+    requestResponse.requestId = reqeust.requestId;
+    requestResponse.bloodGroup = currentUserState.data!.bloodGroup;
+    requestResponse.responseDate = DateTime.now();
+    requestResponse.responseMessage = 'I want to donate blood to your patient';
+    requestResponse.responseStatus = false;
+
+    final response = requestResponse.toMap();
+    DocumentReference docRef = await FirebaseFirestore.instance
+        .collection('request_response')
+        .add(response);
+    Logger().i(docRef.id);
+    String responseId = docRef.id;
+    await docRef.update({'responseId': responseId});
   }
 
-  void _setupTokenRefreshListener() {
-    Logger().i('Setting up token refresh checker');
-    _checkToken();
-    Future.delayed(const Duration(hours: 24), _checkToken);
-  }
-
-  Future<void> _checkToken() async {
-    try {
-      String? token;
-      if (kIsWeb) {
-        token = await FirebaseMessaging.instance.getToken(
-          vapidKey:
-              'BE7twew0v0Yt-fDD68pP40FgH2u6wReDBRG-RHFjdwUKNmx-IXxbN8N0S8Piqmm7GGrMmBjqinqVTCr32wXEANw',
-        );
-      } else {
-        token = await FirebaseMessaging.instance.getToken();
-      }
-      if (token != null) {
-        Logger().i('Token: $token');
-
-        if (FirebaseAuth.instance.currentUser != null) {
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(FirebaseAuth.instance.currentUser!.uid)
-              .update({
-            'fcmToken': token,
-          });
-          Logger().i('Token updated successfully');
-        } else {
-          Logger().e('No current user found');
-        }
-      }
-    } catch (e) {
-      Logger().e('Error in token refresh checker: $e');
-    }
+  void _requestNotificationPermissions() {
+    _pushNotificationService.requestNotificationPermissions();
   }
 
   @override
   void initState() {
     super.initState();
+    _authService = AuthService();
+    _databaseService = DatabaseService();
     _requestNotificationPermissions();
     _setupTokenRefreshListener();
-    //_sendPushNotification();
+
+    ref.read(currentUserProvider);
   }
 
-  //ignore: avoid_void_async
-  void _sendPushNotification() {
-    final fcm = FirebaseMessaging.instance;
-    fcm.subscribeToTopic('all');
+  void _setupTokenRefreshListener() {
+    _pushNotificationService.setupTokenRefreshListener();
   }
 
   @override
@@ -131,7 +119,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ref
           .watch(patientProvider.notifier)
           .updateNeedBloodUnits(request.requestId, request.units - 1);
-
+      await sendResponse(request);
       if (request.units == 0) {
         ref
             .watch(patientProvider.notifier)
@@ -141,7 +129,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           _authService.currentUser!.uid, request.currentUserUid);
       final message = MessageModel(
         messageId: '',
-        message: 'I am going to donate blood to your patient',
+        message: 'I want to donate blood to your patient',
         senderUid: _authService.currentUser!.uid,
         receiverUid: request.currentUserUid,
         time: Timestamp.now().toDate().toIso8601String(),
@@ -174,15 +162,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     _authService = AuthService();
-    Logger().i(_authService);
+
     _databaseService = DatabaseService();
+
     requestState = ref.watch(patientProvider);
-    _isGoingToDonate = false;
+    ref.watch(patientProvider.notifier).fetchBloodRequests();
+
     requests = requestState.data ?? [];
     ref
         .read(currentUserProvider.notifier)
         .fetchCurrentUser(_authService.currentUser!.uid);
+
     currentUserState = ref.watch(currentUserProvider);
+
+    myRequests = requests
+        .where((request) =>
+            request.currentUserUid == currentUserState.data!.uid &&
+            !request.isRequestDelete &&
+            !request.isRequestComplete)
+        .toList();
+    final otherRequests = requests
+        .where((request) =>
+            request.currentUserUid != currentUserState.data!.uid &&
+            !request.isRequestDelete &&
+            !request.isRequestComplete)
+        .toList();
 
     return GestureDetector(
       onTap: () {
@@ -194,7 +198,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             height: kIsWeb ? 50 : 400,
             width: double.infinity,
             child: CustomPaint(
-              size: const Size(double.infinity, 400),
+              size: const Size(
+                200,
+                100,
+              ),
               painter: HomeBackground(),
             ),
           ),
@@ -202,7 +209,127 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             child: ListView(
               children: [
-                if (!kIsWeb) _menuCard(),
+                if (!kIsWeb)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 4.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            NavigationService().navigateToRoute('/donors');
+                          },
+                          child: Card(
+                            child: SizedBox(
+                              height: 85,
+                              width: 85,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.search,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  const SizedBox(
+                                    height: 5,
+                                  ),
+                                  const Text(
+                                    'Find Donor',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            NavigationService().navigateToRoute('/request');
+                          },
+                          child: Card(
+                            child: SizedBox(
+                              height: 85,
+                              width: 85,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.bloodtype,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  const SizedBox(
+                                    height: 5,
+                                  ),
+                                  const Text(
+                                    'Blood Request',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            NavigationService().navigateToRoute('/response');
+                          },
+                          child: Card(
+                            child: SizedBox(
+                              height: 85,
+                              width: 85,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.reply,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  const SizedBox(
+                                    height: 5,
+                                  ),
+                                  const Text(
+                                    'Responses',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (currentUserState.data != null &&
+                            currentUserState.data!.isDonor)
+                          InkWell(
+                            onTap: () {
+                              NavigationService().navigateToRoute('/donations');
+                            },
+                            child: Card(
+                              child: SizedBox(
+                                height: 85,
+                                width: 85,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.volunteer_activism,
+                                      color:
+                                          Theme.of(context).colorScheme.error,
+                                    ),
+                                    const SizedBox(
+                                      height: 5,
+                                    ),
+                                    const Text(
+                                      'Donations',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 SizedBox(
                   height: 615,
                   child: requestState.isLoading
@@ -212,26 +339,203 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       : requestState.errorMessage != null
                           ? Center(
                               child:
-                                  Text('Error: ${requestState.errorMessage}'),
+                                  Text('Error: ${requestState.errorMessage}  '),
                             )
-                          : requests.isEmpty
-                              ? const Center(
-                                  child: Text('No requests available'),
+                          : otherRequests.isEmpty
+                              ? const SizedBox(
+                                  width: 400,
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16.0,
+                                    ),
+                                    child: Card(
+                                      elevation: 5,
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.info,
+                                              size: 50,
+                                              color: Colors.grey,
+                                            ),
+                                            Text('No requests available ',
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  color: Colors.grey,
+                                                )),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 )
-                              : PageView.builder(
-                                  itemCount: requests.length,
-                                  controller: _pageController,
-                                  itemBuilder: (context, index) {
-                                    return _request(
-                                      index,
-                                      _authService.currentUser!.uid,
-                                    );
-                                  },
+                              : SizedBox(
+                                  width: 400,
+                                  child: PageView.builder(
+                                    itemCount: otherRequests.length,
+                                    controller: _pageController,
+                                    itemBuilder: (context, index) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: kIsWeb ? 256.0 : 16,
+                                        ),
+                                        child: Card(
+                                          elevation: 5,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                width: kIsWeb
+                                                    ? 400
+                                                    : double.infinity,
+                                                alignment: Alignment.center,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 16.0,
+                                                        vertical: 8.0),
+                                                child: Text(
+                                                  '${otherRequests[index].bloodGroup} BLOOD REQUIRED',
+                                                  style: const TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                              ),
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.0),
+                                                child: Divider(),
+                                              ),
+                                              _patientInfo(
+                                                'Patient Name',
+                                                otherRequests[index].name,
+                                              ),
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.0),
+                                                child: Divider(),
+                                              ),
+                                              _patientInfo(
+                                                'Blood Group',
+                                                otherRequests[index].bloodGroup,
+                                              ),
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.0),
+                                                child: Divider(),
+                                              ),
+                                              _patientInfo(
+                                                'Amount of bag',
+                                                otherRequests[index]
+                                                    .units
+                                                    .toString(),
+                                              ),
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.0),
+                                                child: Divider(),
+                                              ),
+                                              _patientInfo(
+                                                'Transfusion Date',
+                                                otherRequests[index]
+                                                    .transfusionDate,
+                                              ),
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.0),
+                                                child: Divider(),
+                                              ),
+                                              _patientInfo(
+                                                'Time',
+                                                otherRequests[index]
+                                                    .transfusionTime,
+                                              ),
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.0),
+                                                child: Divider(),
+                                              ),
+                                              _patientInfo(
+                                                'Hospital',
+                                                otherRequests[index].hospital,
+                                              ),
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.0),
+                                                child: Divider(),
+                                              ),
+                                              _patientInfo(
+                                                'Address',
+                                                otherRequests[index].address,
+                                              ),
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.0),
+                                                child: Divider(),
+                                              ),
+                                              _patientInfo(
+                                                'Phone',
+                                                otherRequests[index].contact,
+                                              ),
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.0),
+                                                child: Divider(),
+                                              ),
+                                              _patientInfo(
+                                                  'Age',
+                                                  otherRequests[index]
+                                                      .age
+                                                      .toString()),
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.0),
+                                                child: Divider(),
+                                              ),
+                                              _patientInfo(
+                                                'Haemoglobin',
+                                                otherRequests[index]
+                                                    .haemoglobin
+                                                    .toString(),
+                                              ),
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.0),
+                                                child: Divider(),
+                                              ),
+                                              _patientInfo(
+                                                  'Description',
+                                                  otherRequests[index]
+                                                      .description),
+                                              _requestNo(index),
+                                              if (otherRequests[index]
+                                                      .currentUserUid !=
+                                                  currentUserState.data!.uid)
+                                                _donateButton(
+                                                    otherRequests[index]),
+                                              if (otherRequests[index]
+                                                      .currentUserUid ==
+                                                  currentUserState.data!.uid)
+                                                _editOrCancelButton(
+                                                    otherRequests[index]),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
                 ),
                 if (!requestState.isLoading &&
                     requestState.errorMessage == null &&
-                    requests.isNotEmpty)
+                    otherRequests.isNotEmpty)
                   Center(
                     child: SizedBox(
                       height: 32,
@@ -239,8 +543,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Spacer(),
-                          Expanded(child: _smoothPageIndicator()),
-                          Expanded(child: _seeAll()),
+                          Expanded(
+                              child:
+                                  _smoothPageIndicator(otherRequests.length)),
+                          Expanded(child: _seeAll(otherRequests.length)),
                         ],
                       ),
                     ),
@@ -253,13 +559,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _divider() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8.0),
-      child: Divider(),
-    );
-  }
-
   Widget _patientInfo(String title, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
@@ -267,120 +566,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Text(title),
           const Spacer(),
-          Text(value),
-        ],
-      ),
-    );
-  }
-
-  Widget _tappableCard(String title, IconData icon, String route) {
-    return InkWell(
-      onTap: () {
-        NavigationService().navigateToRoute(route);
-      },
-      child: Card(
-        child: SizedBox(
-          height: 85,
-          width: 85,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(
-                height: 5,
-              ),
-              Text(title, style: const TextStyle(fontSize: 12)),
-            ],
+          Text(
+            value,
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _request(int index, String currentUserUid) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Card(
-        elevation: 5,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: double.infinity,
-              alignment: Alignment.center,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text(
-                '${requests[index].bloodGroup} BLOOD REQUIRED',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                ),
-              ),
-            ),
-            _divider(),
-            _patientInfo(
-              'Patient Name',
-              requests[index].name,
-            ),
-            _divider(),
-            _patientInfo(
-              'Blood Group',
-              requests[index].bloodGroup,
-            ),
-            _divider(),
-            _patientInfo(
-              'Amount of bag',
-              requests[index].units.toString(),
-            ),
-            _divider(),
-            _patientInfo(
-              'Transfusion Date',
-              requests[index].transfusionDate,
-            ),
-            _divider(),
-            _patientInfo(
-              'Time',
-              requests[index].transfusionTime,
-            ),
-            _divider(),
-            _patientInfo(
-              'Hospital',
-              requests[index].hospital,
-            ),
-            _divider(),
-            _patientInfo(
-              'Address',
-              requests[index].address,
-            ),
-            _divider(),
-            _patientInfo(
-              'Phone',
-              requests[index].contact,
-            ),
-            _divider(),
-            _patientInfo('Age', requests[index].age.toString()),
-            _divider(),
-            _patientInfo(
-              'Haemoglobin',
-              requests[index].haemoglobin.toString(),
-            ),
-            _divider(),
-            _patientInfo('Description', requests[index].description),
-            _requestNo(index),
-            if (requests[index].currentUserUid != currentUserUid)
-              _donateButton(requests[index]),
-            if (requests[index].currentUserUid == currentUserUid)
-              _editOrCancelButton(requests[index]),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -396,48 +585,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _donateButton(PatientModel request) {
     return CustomElevatedButton(
       isLoading: _isGoingToDonate,
-      onPressed: currentUserState.data!.isGoingToDonate
+      onPressed: !currentUserState.data!.isDonor
           ? null
-          : currentUserState.isLoading
-              ? () {
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    },
-                  );
-                }
-              : currentUserState.errorMessage != null
+          : currentUserState.data!.isGoingToDonate
+              ? null
+              : currentUserState.isLoading
                   ? () {
                       showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Error'),
-                              content: Text(currentUserState.errorMessage!),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('OK'),
-                                ),
-                              ],
-                            );
-                          });
+                        context: context,
+                        builder: (context) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        },
+                      );
                     }
-                  : request.bloodGroup != currentUserState.data!.bloodGroup
+                  : currentUserState.errorMessage != null
                       ? () {
                           showDialog(
                               context: context,
                               builder: (context) {
                                 return AlertDialog(
                                   title: const Text('Error'),
-                                  content: const Text(
-                                    'You can only donate blood of your own blood group',
-                                  ),
+                                  content: Text(currentUserState.errorMessage!),
                                   actions: [
                                     TextButton(
                                       onPressed: () {
@@ -449,66 +619,105 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 );
                               });
                         }
-                      : () {
-                          showDialog(
-                              context: context,
-                              builder: (ctx) {
-                                return AlertDialog(
-                                  title: const Text('Donate'),
-                                  content: const Text(
-                                    'Are you sure you want to donate?',
-                                  ),
-                                  actions: [
-                                    Row(
-                                      children: [
-                                        const Spacer(),
-                                        Expanded(
-                                          child: CustomElevatedButton(
-                                            isLoading: _isGoingToDonate,
-                                            onPressed: () async {
-                                              _donate(request);
-                                              NavigationService().goBack();
-
-                                              final userSnapshot =
-                                                  await _databaseService
-                                                      .getUser(request
-                                                          .currentUserUid);
-                                              final otherUser =
-                                                  UserModel.fromMap(userSnapshot
-                                                          .data()
-                                                      as Map<String, dynamic>);
-                                              NavigationService()
-                                                  .navigateToRoute(
-                                                '/chat',
-                                                arguments: otherUser,
-                                              );
-                                            },
-                                            title: 'Yes',
-                                            width: 20,
-                                            height: 35,
-                                          ),
-                                        ),
-                                        // TextButton(
-                                        //   onPressed: () {
-                                        //     _donate(request);
-                                        //     Navigator.of(context).pop();
-                                        //   },
-                                        //   child: const Text('Yes'),
-                                        // ),
-                                        Expanded(
-                                          child: TextButton(
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: const Text('No'),
-                                          ),
+                      : request.bloodGroup != currentUserState.data!.bloodGroup
+                          ? () {
+                              showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text('Error'),
+                                      content: const Text(
+                                        'You can only donate blood of your own blood group',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: const Text('OK'),
                                         ),
                                       ],
-                                    )
-                                  ],
-                                );
-                              });
-                        },
+                                    );
+                                  });
+                            }
+                          : !currentUserState.data!.isDonor
+                              ? () {
+                                  showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return AlertDialog(
+                                          title: const Text('Error'),
+                                          content: const Text(
+                                            'You are not a donor',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child: const Text('OK'),
+                                            ),
+                                          ],
+                                        );
+                                      });
+                                }
+                              : () {
+                                  showDialog(
+                                      context: context,
+                                      builder: (ctx) {
+                                        return AlertDialog(
+                                          title: const Text('Donate'),
+                                          content: const Text(
+                                            'Are you sure you want to donate?',
+                                          ),
+                                          actions: [
+                                            Row(
+                                              children: [
+                                                const Spacer(),
+                                                Expanded(
+                                                  child: CustomElevatedButton(
+                                                    isLoading: _isGoingToDonate,
+                                                    onPressed: () async {
+                                                      _donate(request);
+                                                      NavigationService()
+                                                          .goBack();
+
+                                                      final userSnapshot =
+                                                          await _databaseService
+                                                              .getUser(request
+                                                                  .currentUserUid);
+                                                      final otherUser =
+                                                          UserModel.fromMap(
+                                                              userSnapshot
+                                                                      .data()
+                                                                  as Map<String,
+                                                                      dynamic>);
+                                                      NavigationService()
+                                                          .navigateToRoute(
+                                                        '/chat',
+                                                        arguments: otherUser,
+                                                      );
+                                                    },
+                                                    title: 'Yes',
+                                                    width: 20,
+                                                    height: 35,
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: TextButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    child: const Text('No'),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          ],
+                                        );
+                                      });
+                                },
       title: 'Donate Now!',
       width: 40,
       height: 45,
@@ -516,14 +725,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _smoothPageIndicator() {
+  Widget _smoothPageIndicator(int len) {
     return Container(
-      alignment: Alignment.center, // Center the indicator
-      width: 200, // Make the container take the full width
-      height: 50.0, // Provide a fixed height
+      alignment: Alignment.center,
+      width: 200,
+      height: 50.0,
       child: SmoothPageIndicator(
         controller: _pageController,
-        count: requests.length > 10 ? 10 : requests.length,
+        count: len > 10 ? 10 : len,
         effect: const WormEffect(
           dotHeight: 8.0,
           dotWidth: 8.0,
@@ -541,42 +750,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _seeAll() {
+  Widget _seeAll(int length) {
     return CustomTextButton(
       isLoading: false,
       onPressed: _requestlists,
-      title: 'See all',
-    );
-  }
-
-  Widget _menuCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _tappableCard(
-            'Find Donor',
-            Icons.search,
-            '/donors',
-          ),
-          _tappableCard(
-            'Blood Request',
-            Icons.bloodtype,
-            '/request',
-          ),
-          _tappableCard(
-            'Responses',
-            Icons.reply,
-            '/response',
-          ),
-          _tappableCard(
-            'Donations',
-            Icons.volunteer_activism,
-            '/donations',
-          ),
-        ],
-      ),
+      title: 'See all ($length)',
     );
   }
 

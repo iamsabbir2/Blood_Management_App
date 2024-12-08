@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "454925533198",
-    "project_id": "bloodmanagementapp-b2314",
-    "storage_bucket": "bloodmanagementapp-b2314.appspot.com"
+    "project_number": "526356031453",
+    "project_id": "bloodmanagementapp1",
+    "storage_bucket": "bloodmanagementapp1.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:454925533198:android:afe76e144809154eacbc5f",
+        "mobilesdk_app_id": "1:526356031453:android:97a4fe27bc9b351ab33834",
         "android_client_info": {
           "package_name": "com.example.blood_management_app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyD3xTQy9bS6xyQP5GvM-JliG5tFpQdtEsc"
+          "current_key": "AIzaSyAE9-YgFH7AYN499TIqWj-16OCn9Dnt6GM"
         }
       ],
       "services": {

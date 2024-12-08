@@ -1,4 +1,5 @@
 import 'package:blood_management_app/firebase_options.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:logger/logger.dart';
@@ -12,11 +13,17 @@ class SplashPage extends StatefulWidget {
 
 class _SplashPageState extends State<SplashPage> {
   final Logger _logger = Logger();
+
   @override
   void initState() {
     super.initState();
+    if (kIsWeb) {
+      _setup().then((_) {
+        widget.onInitializationComplete();
+      });
+    }
     Future.delayed(
-      const Duration(seconds: 1),
+      const Duration(seconds: 2),
     ).then((_) {
       _setup().then((_) {
         widget.onInitializationComplete();
@@ -29,7 +36,7 @@ class _SplashPageState extends State<SplashPage> {
     return MaterialApp(
       title: 'Blood Management App',
       theme: ThemeData(
-        scaffoldBackgroundColor: const Color.fromRGBO(36, 35, 49, 1.0),
+        scaffoldBackgroundColor: const Color.fromARGB(255, 32, 28, 28),
       ),
       home: Scaffold(
         body: Center(

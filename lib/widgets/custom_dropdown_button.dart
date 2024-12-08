@@ -24,7 +24,7 @@ class CustomDropdownButton extends StatelessWidget {
       iconEnabledColor: Colors.white,
       hint: Text(
         title ?? 'Sort by District',
-        style: TextStyle(
+        style: const TextStyle(
           color: Colors.white,
         ),
       ),

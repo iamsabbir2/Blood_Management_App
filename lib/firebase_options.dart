@@ -50,11 +50,11 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyD3xTQy9bS6xyQP5GvM-JliG5tFpQdtEsc',
-    appId: '1:454925533198:android:afe76e144809154eacbc5f',
-    messagingSenderId: '454925533198',
-    projectId: 'bloodmanagementapp-b2314',
-    storageBucket: 'bloodmanagementapp-b2314.appspot.com',
+    apiKey: 'AIzaSyAE9-YgFH7AYN499TIqWj-16OCn9Dnt6GM',
+    appId: '1:526356031453:android:97a4fe27bc9b351ab33834',
+    messagingSenderId: '526356031453',
+    projectId: 'bloodmanagementapp1',
+    storageBucket: 'bloodmanagementapp1.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(

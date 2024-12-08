@@ -1,6 +1,10 @@
 // ignore_for_file: unused_element
 
+import 'package:blood_management_app/services/navigation_service.dart';
+import 'package:blood_management_app/widgets/custom_text_button.dart';
+import 'package:blood_management_app/widgets/my_request_list_tile.dart';
 import 'package:flutter/material.dart';
+import '../models/patient_model.dart';
 import '../screens/show_request.dart';
 
 //package
@@ -11,6 +15,8 @@ import '../providers/patient_provider.dart';
 
 //services
 import '../services/auth_service.dart';
+import '../widgets/custom_elevated_button.dart';
+import '../widgets/edit_request.dart';
 
 class MyRequests extends ConsumerStatefulWidget {
   const MyRequests({super.key});
@@ -31,12 +37,21 @@ class _MyRequestsState extends ConsumerState<MyRequests> {
     );
   }
 
+  void _editRequest(PatientModel request) {
+    NavigationService().navigateToPage(EditRequest(
+      patient: request,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.read(patientProvider.notifier).fetchBloodRequests();
     final requests = ref.watch(patientProvider);
 
     final myRequests = requests.data?.where((element) {
-          return element.currentUserUid == auth.currentUser!.uid;
+          return element.currentUserUid == auth.currentUser!.uid &&
+              !element.isRequestDelete &&
+              !element.isRequestComplete;
         }).toList() ??
         [];
 
@@ -48,9 +63,61 @@ class _MyRequestsState extends ConsumerState<MyRequests> {
       return ListView.builder(
         itemCount: myRequests.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(myRequests[index].name),
-            subtitle: Text(myRequests[index].bloodGroup),
+          final myRequest = myRequests[index];
+          return Card(
+            child: ListTile(
+              title: Text(myRequest.name),
+              leading: Text(myRequest.bloodGroup,
+                  style: const TextStyle(fontSize: 20)),
+              minLeadingWidth: 40,
+              subtitle: Text('${myRequest.units.toString()}  units of blood'),
+              onTap: () {
+                NavigationService().navigateToRoute('/show_request');
+              },
+              trailing: ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) {
+                      return AlertDialog(
+                        title: const Text('Warning!'),
+                        content: const Text(
+                          'Are you sure to edit request?',
+                        ),
+                        actions: [
+                          CustomElevatedButton(
+                            isLoading: false,
+                            onPressed: () {
+                              NavigationService().goBack();
+                            },
+                            title: 'No',
+                            width: 50,
+                            height: 32,
+                          ),
+                          CustomTextButton(
+                            onPressed: () {
+                              NavigationService().goBack();
+                              _editRequest(myRequest);
+                            },
+                            title: 'Yes',
+                            isLoading: false,
+                          )
+                        ],
+                      );
+                    },
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    )),
+                child: const Text(
+                  'Edit',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
           );
         },
       );

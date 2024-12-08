@@ -4,9 +4,9 @@ class FormErrorText extends StatelessWidget {
   final String errorMessage;
 
   const FormErrorText({
-    Key? key,
+    super.key,
     required this.errorMessage,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +14,7 @@ class FormErrorText extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 0.0),
       child: Text(
         errorMessage,
-        style: TextStyle(
+        style: const TextStyle(
           color: Colors.red,
           fontSize: 14,
         ),

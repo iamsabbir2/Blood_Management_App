@@ -12,7 +12,8 @@ class ChatScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Future<void> _makePhoneCall(String phoneNumber) async {
+    final args = ModalRoute.of(context)!.settings.arguments as UserModel;
+    Future<void> makePhoneCall(String phoneNumber) async {
       final Uri launchUri = Uri(
         scheme: 'tel',
         path: phoneNumber,
@@ -20,7 +21,6 @@ class ChatScreen extends StatelessWidget {
       await launchUrl(launchUri);
     }
 
-    final args = ModalRoute.of(context)!.settings.arguments as UserModel;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -31,7 +31,7 @@ class ChatScreen extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.phone),
               onPressed: () async {
-                await _makePhoneCall(args.contact);
+                await makePhoneCall(args.contact);
               },
             ),
           IconButton(

@@ -41,7 +41,7 @@ class ChatMessage {
 
   Map<String, dynamic> toJson() {
     String messageType;
-    switch (this.type) {
+    switch (type) {
       case MessageType.TEXT:
         messageType = 'TEXT';
         break;

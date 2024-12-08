@@ -1,4 +1,5 @@
 //packags
+import 'package:blood_management_app/models/patient_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,9 +14,13 @@ class RequestLists extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final AuthService authService = AuthService();
     final patientState = ref.watch(patientProvider);
-    final patients = patientState.data ?? [];
-    AuthService _authService = AuthService();
+    List<PatientModel> patients = patientState.data ?? [];
+    patients = patients.where((request) {
+      return request.currentUserUid != authService.currentUser!.uid;
+    }).toList();
+
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(
@@ -41,21 +46,45 @@ class RequestLists extends ConsumerWidget {
                       itemCount: patients.length,
                       itemBuilder: (context, index) {
                         final patient = patients[index];
-                        return ListTile(
-                          title: Text(patient.name),
-                          subtitle: Text(patient.bloodGroup),
-                          trailing: CircleAvatar(
-                            backgroundColor: Colors.red[400],
-                            child: (patient.currentUserUid ==
-                                    _authService.currentUser!.uid)
-                                ? const Icon(
-                                    Icons.edit,
-                                    color: Colors.white,
-                                  )
-                                : const Icon(
-                                    Icons.volunteer_activism_rounded,
-                                    color: Colors.white,
-                                  ),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8.0,
+                            vertical: 4.0,
+                          ),
+                          child: Card(
+                            child: ListTile(
+                              onTap: () {},
+                              title: Text(patient.name),
+                              subtitle: Text(
+                                  '${patient.units.toString()} units of blood'),
+                              minLeadingWidth: 40,
+                              leading: Text(
+                                patient.bloodGroup,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              trailing: (patient.currentUserUid ==
+                                      authService.currentUser!.uid)
+                                  ? const Text('Edit')
+                                  : ElevatedButton(
+                                      onPressed: () {},
+                                      style: ElevatedButton.styleFrom(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(3),
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                      child: const Text(
+                                        'Dontate',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                            ),
                           ),
                         );
                       },

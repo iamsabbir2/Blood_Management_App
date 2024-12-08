@@ -1,3 +1,5 @@
+import 'package:logger/web.dart';
+
 class PatientModel {
   String requestId;
   String currentUserUid;
@@ -13,6 +15,7 @@ class PatientModel {
   int age;
   double haemoglobin;
   bool isRequestComplete;
+  bool isRequestDelete;
 
   PatientModel({
     required this.requestId,
@@ -29,6 +32,7 @@ class PatientModel {
     required this.age,
     required this.haemoglobin,
     this.isRequestComplete = false,
+    this.isRequestDelete = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -42,10 +46,11 @@ class PatientModel {
       'description': description,
       'hospital': hospital,
       'isRequestComplete': isRequestComplete,
+      'isRequestDelete': isRequestDelete,
       'name': name,
       'requestId': requestId,
-      'transfutionDate': transfusionDate,
-      'transfutiontime': transfusionTime,
+      'transfusionDate': transfusionDate,
+      'transfusionTime': transfusionTime,
       'units': units,
     };
   }
@@ -63,8 +68,9 @@ class PatientModel {
           ? (map['haemoglobin'] as int).toDouble()
           : map['haemoglobin'] as double,
       isRequestComplete: map['isRequestComplete'] as bool,
+      isRequestDelete: map['isRequestDelete'] as bool,
       name: map['name'],
-      requestId: map['requestId'],
+      requestId: map['requestId'] as String,
       transfusionDate: map['transfusionDate'],
       transfusionTime: map['transfusionTime'],
       units: map['units'] as int,

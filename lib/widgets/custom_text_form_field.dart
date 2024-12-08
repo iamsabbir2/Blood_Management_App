@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 
+//ignore: must_be_immutable
 class CustomTextFormField extends StatefulWidget {
   final Function(String) onSaved;
   final String regEx;
@@ -127,9 +129,13 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                     validationResult = 'Passwords do not match';
                   }
                 } else if (widget.regEx.isNotEmpty) {
+                  Logger().i(widget.regEx);
                   final regExp = RegExp(widget.regEx);
+                  Logger().i(regExp);
+                  Logger().i(value);
+                  Logger().i(regExp.hasMatch(value));
                   if (!regExp.hasMatch(value)) {
-                    validationResult = widget.title;
+                    validationResult = widget.errorMessage;
                   }
                 }
 
