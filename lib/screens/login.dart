@@ -294,7 +294,9 @@ class _LoginState extends ConsumerState<Login> {
 
   Widget _forgotPassword() {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        NavigationService().navigateToRoute('/forgot_password');
+      },
       child: const Text(
         'Forgot password?',
       ),

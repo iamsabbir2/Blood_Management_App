@@ -1,5 +1,6 @@
 //packags
 import 'package:blood_management_app/models/patient_model.dart';
+import 'package:blood_management_app/services/navigation_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -53,7 +54,11 @@ class RequestLists extends ConsumerWidget {
                           ),
                           child: Card(
                             child: ListTile(
-                              onTap: () {},
+                              onTap: () {
+                                NavigationService().navigateToRoute(
+                                  '/show_request',
+                                );
+                              },
                               title: Text(patient.name),
                               subtitle: Text(
                                   '${patient.units.toString()} units of blood'),

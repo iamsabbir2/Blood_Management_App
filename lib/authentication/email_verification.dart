@@ -10,7 +10,7 @@ import 'package:logger/logger.dart';
 
 //services
 import '../pages/setup_pages.dart';
-import '../services/navigation_service.dart';
+import '../services/auth_service.dart';
 
 class EmailVerificationPage extends ConsumerStatefulWidget {
   const EmailVerificationPage({super.key});
@@ -24,19 +24,15 @@ class EmailVerificationPage extends ConsumerStatefulWidget {
 class _EmailVerificationState extends ConsumerState<EmailVerificationPage> {
   Timer? _timer;
   Timer? _timer2;
-  Timer? _verificationTimer;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final AuthService _auth = AuthService();
   final DatabaseService _databaseService = DatabaseService();
-  final int _verificationTimeout = 60;
-  int _countDown = 30;
-  bool _isResendButtonEnabled = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _verifyEmail();
       _startEmailVerificationCheck();
-      _startTime();
     });
   }
 
@@ -45,22 +41,6 @@ class _EmailVerificationState extends ConsumerState<EmailVerificationPage> {
     _timer?.cancel();
     _timer2?.cancel();
     super.dispose();
-  }
-
-  void _startTime() {
-    _timer2 = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_countDown == 0) {
-          setState(() {
-            _isResendButtonEnabled = true;
-          });
-          _timer2?.cancel();
-          _isResendButtonEnabled = true;
-        } else {
-          _countDown--;
-        }
-      });
-    });
   }
 
   Future<void> _verifyEmail() async {
@@ -102,35 +82,6 @@ class _EmailVerificationState extends ConsumerState<EmailVerificationPage> {
     });
   }
 
-  void _startVerificationTimer() {
-    _verificationTimer =
-        Timer.periodic(const Duration(seconds: 10), (timer) async {
-      User? user = _auth.currentUser;
-      await user?.reload();
-
-      if (user != null && user.emailVerified) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Email verified successfully'),
-            ),
-          );
-        }
-      } else if (timer.tick * 10 >= _verificationTimeout) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Email verification timeout'),
-            ),
-          );
-        }
-
-        timer.cancel();
-        _deleteAccount();
-      }
-    });
-  }
-
   void _deleteAccount() async {
     try {
       User? user = _auth.currentUser;
@@ -158,67 +109,9 @@ class _EmailVerificationState extends ConsumerState<EmailVerificationPage> {
     }
   }
 
-  void _resendVerificationEmail() async {
-    setState(() {
-      _countDown = 30;
-      _isResendButtonEnabled = false;
-    });
-    _startTime();
-    User? user = _auth.currentUser;
-
-    try {
-      if (user != null) {
-        await user.sendEmailVerification();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Verfication email sent to ${user.email}'),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      Logger().e('Failed to send verification email: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send verification email: $e'),
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = _auth.currentUser!;
-    //final authState = ref.watch(authProvider);
-    // authState.when(
-    //   data: (user) {
-    //     if (user != null && user.emailVerified) {
-    //       Navigator.pushReplacement(
-    //         context,
-    //         MaterialPageRoute(
-    //           builder: (context) => OnboardingScreen(),
-    //         ),
-    //       );
-    //     }
-    //   },
-    //   error: (error, stackTrace) {
-    //     return Scaffold(
-    //       body: Center(
-    //         child: Text('An error occurred :$error'),
-    //       ),
-    //     );
-    //   },
-    //   loading: () {
-    //     return const Scaffold(
-    //       body: Center(
-    //         child: CircularProgressIndicator(),
-    //       ),
-    //     );
-    //   },
-    // );
 
     return Scaffold(
       body: Column(
@@ -285,24 +178,14 @@ class _EmailVerificationState extends ConsumerState<EmailVerificationPage> {
                 ),
             textAlign: TextAlign.center,
           ),
-          // const SizedBox(
-          //   height: 10,
-          // ),
-          // Text(
-          //   '${_countDown ~/ 60} : ${_countDown % 60} seconds remaining',
-          //   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-          //         fontSize: 17,
-          //       ),
-          //   textAlign: TextAlign.center,
-          // ),
           const SizedBox(
             height: 15,
           ),
           Directionality(
             textDirection: TextDirection.rtl,
             child: TextButton.icon(
-              onPressed: () async {
-                await _auth.currentUser!.delete();
+              onPressed: () {
+                _deleteAccount();
                 if (mounted) {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(

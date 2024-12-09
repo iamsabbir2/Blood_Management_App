@@ -63,27 +63,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   @override
   void initState() {
     super.initState();
-    // isEmailVerified();
-  }
-
-  void isEmailVerified() {
-    if (FirebaseAuth.instance.currentUser!.emailVerified == false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Please verify your email address',
-          ),
-          action: SnackBarAction(
-            label: 'Verify',
-            onPressed: () {
-              NavigationService().navigateToPage(
-                const EmailVerificationPage(),
-              );
-            },
-          ),
-        ),
-      );
-    }
   }
 
   @override
@@ -107,8 +86,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       activePage = const HomeScreen();
     }
 
-    //check email is verified or not if not verified show a snackbar
-
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: !kIsWeb
@@ -119,14 +96,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         title: Text(
           activePageTitle,
         ),
-        // leading: kIsWeb
-        //     ? width < 1000
-        //         ? IconButton(
-        //             onPressed: () {},
-        //             icon: const Icon(Icons.menu),
-        //           )
-        //         : null
-        //     : null,
         flexibleSpace: kIsWeb
             ? width > 1000
                 ? Center(
@@ -268,7 +237,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
                     title: const Text('Responses'),
                     leading: const Icon(Icons.reply),
                     onTap: () {
-                      // Navigate to Requests page
                       Navigator.pop(context);
                     },
                   ),
@@ -276,7 +244,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
                     title: const Text('Donations'),
                     leading: const Icon(Icons.volunteer_activism),
                     onTap: () {
-                      // Navigate to Requests page
                       Navigator.pop(context);
                     },
                   ),

@@ -8,6 +8,7 @@ import 'package:logger/logger.dart';
 
 //pages
 import 'authentication/email_verification.dart';
+import 'screens/forgot_password.dart';
 import 'screens/info.dart';
 import 'screens/profile.dart';
 import 'screens/show_request.dart';
@@ -114,6 +115,9 @@ class MyApp extends StatelessWidget {
           },
           '/donations': (ctx) {
             return const DonationsScreen();
+          },
+          '/forgot_password': (ctx) {
+            return const ForgotPassword();
           },
           // '/show_request': (ctx) {
           //   return const MyRequests();

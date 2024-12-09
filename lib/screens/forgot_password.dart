@@ -1,3 +1,4 @@
+import 'package:blood_management_app/widgets/custom_elevated_button.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
@@ -80,11 +81,12 @@ class ForgotPassword extends StatelessWidget {
               const SizedBox(
                 height: 16.0,
               ),
-              ElevatedButton(
-                onPressed: _resetPassword,
-                child: const Text(
-                  'Submit',
-                ),
+              CustomElevatedButton(
+                isLoading: false,
+                onPressed: () {
+                  _resetPassword();
+                },
+                title: 'Submit',
               ),
             ],
           ),

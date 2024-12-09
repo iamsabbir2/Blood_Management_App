@@ -36,7 +36,7 @@ class _SplashPageState extends State<SplashPage> {
     return MaterialApp(
       title: 'Blood Management App',
       theme: ThemeData(
-        scaffoldBackgroundColor: const Color.fromARGB(255, 32, 28, 28),
+        scaffoldBackgroundColor: const Color.fromARGB(255, 80, 58, 58),
       ),
       home: Scaffold(
         body: Center(
