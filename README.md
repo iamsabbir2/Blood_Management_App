@@ -1,3 +1,2 @@
 # Blood_Management_App
-
-# Developed using Flutter and Firebase
+Developed Using Flutter and Firebase
