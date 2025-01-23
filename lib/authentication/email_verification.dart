@@ -10,7 +10,7 @@ import 'package:logger/logger.dart';
 
 //services
 import '../pages/setup_pages.dart';
-import '../services/auth_service.dart';
+import '../services/auth_service_firebase.dart';
 
 class EmailVerificationPage extends ConsumerStatefulWidget {
   const EmailVerificationPage({super.key});

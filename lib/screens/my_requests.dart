@@ -13,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/patient_provider.dart';
 
 //services
-import '../services/auth_service.dart';
+import '../services/auth_service_firebase.dart';
 import '../widgets/custom_elevated_button.dart';
 import '../widgets/edit_request.dart';
 

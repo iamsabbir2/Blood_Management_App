@@ -5,7 +5,7 @@ import '../models/chat_model.dart';
 import '../models/data_state.dart';
 //services
 import '../services/database_service.dart';
-import '../services/auth_service.dart';
+import '../services/auth_service_firebase.dart';
 
 class ChatsNotifier extends StateNotifier<DataState<List<ChatModel>>> {
   final DatabaseService _databaseService;

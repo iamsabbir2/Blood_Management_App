@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/patient_provider.dart';
 
 //services
-import '../services/auth_service.dart';
+import '../services/auth_service_firebase.dart';
 
 class RequestLists extends ConsumerWidget {
   const RequestLists({super.key});

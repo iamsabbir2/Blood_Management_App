@@ -28,7 +28,7 @@ import '../widgets/custom_text_button.dart';
 import '../background/main_screen_background.dart';
 //services
 import '../services/navigation_service.dart';
-import '../services/auth_service.dart';
+import '../services/auth_service_firebase.dart';
 import '../services/push_notification_service.dart';
 //providers
 import '../providers/user_provider.dart';

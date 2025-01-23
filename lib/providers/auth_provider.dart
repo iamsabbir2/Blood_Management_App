@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 //services
-import '../services/auth_service.dart';
+import '../services/auth_service_firebase.dart';
 
 class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
   final AuthService _authService;

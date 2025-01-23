@@ -16,7 +16,7 @@ import '../widgets/custom_elevated_button.dart';
 import '../models/patient_model.dart';
 
 //services
-import '../services/auth_service.dart';
+import '../services/auth_service_firebase.dart';
 import '../services/navigation_service.dart';
 
 //providers

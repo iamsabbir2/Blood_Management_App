@@ -2,7 +2,7 @@
 
 import 'dart:async';
 
-import 'package:blood_management_app/services/auth_service.dart';
+import 'package:blood_management_app/services/auth_service_firebase.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

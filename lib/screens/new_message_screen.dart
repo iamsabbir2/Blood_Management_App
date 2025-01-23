@@ -11,7 +11,7 @@ import '../models/user_model.dart';
 import '../models/data_state.dart';
 
 //services
-import '../services/auth_service.dart';
+import '../services/auth_service_firebase.dart';
 import '../services/navigation_service.dart';
 import '../services/database_service.dart';
 

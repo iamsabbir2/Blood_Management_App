@@ -9,7 +9,7 @@ import '../models/user_model.dart';
 import '../models/message_model.dart';
 
 //services
-import '../services/auth_service.dart';
+import '../services/auth_service_firebase.dart';
 import '../services/database_service.dart';
 
 //providers
