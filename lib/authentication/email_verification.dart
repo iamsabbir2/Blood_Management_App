@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:blood_management_app/providers/auth_provider.dart';
+import 'package:blood_management_app/providers/auth_provider_firebase.dart';
 import 'package:blood_management_app/screens/signup.dart';
 import 'package:blood_management_app/services/database_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

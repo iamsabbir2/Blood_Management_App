@@ -1,59 +1,57 @@
-//packages
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_service.dart';
 
-//services
-import '../services/auth_service_firebase.dart';
+class AuthState {
+  final String? token;
+  final String? error;
 
-class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
-  final AuthService _authService;
-  AuthStateNotifier(this._authService) : super(const AsyncValue.loading()) {
-    _authService.authStateChanges().listen((user) {
-      if (user != null) {
-        state = AsyncValue.data(user);
+  AuthState._({this.token, this.error});
+
+  factory AuthState.initial() => AuthState._();
+  factory AuthState.authenticated(String token) => AuthState._(token: token);
+  factory AuthState.unauthenticated() => AuthState._();
+  factory AuthState.error(String error) => AuthState._(error: error);
+}
+
+class AuthNotifier extends StateNotifier<AsyncValue<AuthState>> {
+  AuthNotifier() : super(const AsyncValue.loading()) {
+    _checkAuthStatus();
+  }
+
+  final AuthService _authService = AuthService();
+
+  Future<void> login(String email, String password) async {
+    try {
+      state = const AsyncValue.loading();
+      await _authService.logIn(email, password);
+      final token = await _authService.getToken();
+
+      if (token != null) {
+        state = AsyncValue.data(AuthState.authenticated(token));
       } else {
-        state = const AsyncValue.data(null);
+        state = AsyncValue.error('token is null', StackTrace.current);
       }
-    });
-  }
-
-  void setUser(User? user) {
-    state = AsyncValue.data(user);
-  }
-
-  Future<void> signIn(String email, String password) async {
-    try {
-      await _authService.signInWithEmailAndPassword(email, password);
-      setUser(_authService.currentUser);
     } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
+      state = AsyncValue.error(e.toString(), stackTrace);
     }
   }
 
-  Future<UserCredential?> signUp(String email, String password) async {
-    try {
-      return await _authService.signUpWithEmailAndPassword(email, password);
-    } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
-    }
-    return null;
+  Future<void> logout() async {
+    await _authService.logout();
+    state = AsyncValue.data(AuthState.unauthenticated());
   }
 
-  Future<void> signOut() async {
-    try {
-      await _authService.signOut();
-      setUser(null);
-    } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
+  Future<void> _checkAuthStatus() async {
+    final token = await _authService.getToken();
+    if (token != null) {
+      state = AsyncValue.data(AuthState.authenticated(token));
+    } else {
+      state = AsyncValue.data(AuthState.unauthenticated());
     }
   }
 }
 
-final authServiceProvider = Provider<AuthService>((ref) {
-  return AuthService();
-});
 final authProvider =
-    StateNotifierProvider<AuthStateNotifier, AsyncValue<User?>>((ref) {
-  final authService = ref.watch(authServiceProvider);
-  return AuthStateNotifier(authService);
+    StateNotifierProvider<AuthNotifier, AsyncValue<AuthState>>((ref) {
+  return AuthNotifier();
 });

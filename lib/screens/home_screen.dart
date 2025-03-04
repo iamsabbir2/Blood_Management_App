@@ -7,16 +7,13 @@ import 'package:blood_management_app/providers/patient_provider.dart';
 import 'package:blood_management_app/services/database_service.dart';
 import 'package:blood_management_app/widgets/edit_request.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 //packages
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:logger/logger.dart';
 //pages
-import '../authentication/email_verification.dart';
 import '../screens/request_lists.dart';
 //models
 import '../models/user_model.dart';
@@ -56,6 +53,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ignore: prefer_final_fields
   bool _isCancellingRequest = false;
   RequestResponse requestResponse = RequestResponse();
+
+  // ignore: prefer_final_fields
   PushNotificationService _pushNotificationService = PushNotificationService();
 
   Future<void> sendResponse(PatientModel reqeust) async {

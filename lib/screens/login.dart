@@ -11,10 +11,10 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 
 //services
 import '../services/navigation_service.dart';
+import '../services/auth_service.dart';
 
 //provider
 import '../providers/auth_provider.dart';
-
 //widgets
 import '../widgets/postioned_text.dart';
 import '../widgets/custom_elevated_button.dart';
@@ -76,6 +76,8 @@ class _LoginState extends ConsumerState<Login> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
+      Logger().i(_email);
+      Logger().i(_password);
       if (!_isConnected) {
         showDialog(
             context: context,
@@ -100,55 +102,11 @@ class _LoginState extends ConsumerState<Login> {
         });
         return;
       }
+      setState(() {
+        _isLoading = false;
+      });
 
-      final authNotifier = ref.read(authProvider.notifier);
-      try {
-        await authNotifier.signIn(_email!, _password!);
-        setState(() {
-          _isLoading = false;
-        });
-      } catch (e) {
-        if (e is FirebaseAuthException) {
-          switch (e.code) {
-            case 'user-not-found':
-              errorMessage = 'User not found';
-              break;
-            case 'wrong-password':
-              errorMessage = 'Wrong password';
-              break;
-            case 'invalid-email':
-              errorMessage = 'Invalid email';
-              break;
-            case 'invalid-credential':
-              errorMessage = 'Invalid credential';
-              break;
-            default:
-              errorMessage = 'An error occurred';
-              break;
-          }
-        }
-        if (mounted) {
-          showDialog(
-              context: context,
-              builder: (ctx) {
-                return AlertDialog(
-                  title: const Text('Error hkjkj'),
-                  content: Text(errorMessage!),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        NavigationService().goBack();
-                      },
-                      child: const Text('Ok'),
-                    )
-                  ],
-                );
-              });
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      }
+      await ref.read(authProvider.notifier).login(_email!, _password!);
     } else {
       setState(() {
         _isLoading = false;

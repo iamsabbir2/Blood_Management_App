@@ -1,15 +1,16 @@
-import 'package:blood_management_app/providers/auth_provider.dart';
+//packages
 import 'package:blood_management_app/screens/home_screen.dart';
 import 'package:blood_management_app/screens/my_requests.dart';
 import 'package:blood_management_app/screens/settings.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:blood_management_app/screens/chats_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+//providers
+import '../providers/auth_provider.dart';
+
 //services
-import '../authentication/email_verification.dart';
 import '../services/navigation_service.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
@@ -181,8 +182,33 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
               },
               onSelected: (value) async {
                 if (value == 1) {
-                  await ref.read(authProvider.notifier).signOut();
-                  await Future.delayed(const Duration(seconds: 3));
+                  bool? confirmLogout = await showDialog<bool>(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Text('Logout'),
+                        content: const Text('Are you sure you want to logout?'),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(false);
+                            },
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(true);
+                            },
+                            child: const Text('Logout'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                  if (confirmLogout == true) {
+                    // Perform logout action
+                    await ref.read(authProvider.notifier).logout();
+                  }
                 }
               },
             ),

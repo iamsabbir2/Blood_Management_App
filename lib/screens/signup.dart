@@ -1,5 +1,5 @@
 //packages
-import 'package:blood_management_app/providers/auth_provider.dart';
+import 'package:blood_management_app/providers/auth_provider_firebase.dart';
 import 'package:blood_management_app/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
